@@ -29,6 +29,6 @@ Before mapping, labels are cleaned (using regex SQL scripts) so that drugs that 
 Text file that contains regex cleaning SQL scripts. Each line corresponds to a different script. This file is used by standardize.py.
 
 * **mapping_inputevents_itemid_parent.csv** :
-CSV File that contains the mappings from clean to generic drugs labels for their unification.
+CSV File that contains the mappings from clean to generic drugs labels for enhanced unification.
 
 
