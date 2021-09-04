@@ -19,7 +19,7 @@ Script file that clean and optimize the dataset, if not already, by making new p
 Script file that calculates discharge measurements by making discharge measurement tables (d3sv1_chartevents_mv_dm, and d3sv1_labevents_mv_dm) from measurement tables (new one's created by clean.py) and also identifies/resolve potential clashes between measurements.  
 
 * **build_diagnosis.py** :
-Script file that first builds patients diagnosis time table with diagnosis enriched with information from noteevents for all diagnosis relating to some noteevent if any using diagnosis short_title and noteevent text. Also matched diagnoses (icd9_code) are mapped to higher-level groups and added in patients' diagnosis time table along with accompanying noteevent information. Then using the table made, we build a binary group-diagnosis vector for a particular patient (hadm_id) at time t and return it when called by task 4 while building feature vectors related to measurements.  
+Script file that first builds patients diagnosis time table with diagnosis enriched with information from noteevents for all diagnosis relating to some noteevent if any using diagnosis short_title and noteevent text. Also matched diagnoses (icd9_code) are mapped to higher-level groups and added in patients' diagnosis time table along with accompanying noteevent information. 
 
 * **standardize.py** :
 Script that performs the mapping and unifies similar drugs based on labels with different ids (itemids). The mapping with base to clean to generic name is stored in a new table of "d3sv1_drugs_mapping".
@@ -30,9 +30,5 @@ Text file that contains regex cleaning SQL scripts. Each line corresponds to a d
 
 * **mapping_inputevents_itemid_parent.csv** :
 CSV File that contains the mappings from clean to generic drugs labels for their unification.
-
-
-* **build_measurement.py** :
-Script file that first read all measurements for a particular patient made until time t. Then build a measurement vector, by calculating for each measurement their lastest value, and return it when called by pipeline processes in task 4 while building feature vectors related to measurements. It also make measurement type which for each measurements in lab result and chart events stores the type of that measurement.  
 
 
