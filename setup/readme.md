@@ -2,7 +2,7 @@
 In this folder, you will find scripts and text files that will preprocessed the data which involves filtering patients, standardizing the drug data, and determining time for patients diagnosis.
 The setup could take upwards of one day with patients diagnosis time line building being the most time consuming process.
 
-File listed in the folder are scripts: main.py, check_db_setup.py, clean.py,  measure.py, and evaluate.py, text file: parameters.txt and csv file: pat_hold_out.csv.
+File listed in the folder are scripts: main.py, check_db_setup.py, clean.py,  build_measurement.py, build_diagnosis.py, and standardize.py, text file: regex_cleaning_sql_scripts.txt and csv file: mapping_inputevents_itemid_parent.csv.
 
 Here is the description of each:
 

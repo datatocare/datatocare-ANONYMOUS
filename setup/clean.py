@@ -50,7 +50,7 @@ def check_dataset_cleaned(cur):
         return False
 
 
-# Creating table d3sv1_patients_mv with patients exclusive to mv
+# Creating tables d3sv1_patients_mv and d3sv1_admissions_mv with patients exclusive to mv
 def clean(cur):
     print('Creating table d3sv1_patients_mv')
     clean_patients_query = "CREATE TABLE d3sv1_patients_mv AS "\
@@ -59,14 +59,17 @@ def clean(cur):
         "SELECT subject_id FROM INPUTEVENTS_CV ) "\
         "SELECT * FROM PATIENTS WHERE subject_id NOT IN (SELECT subject_id FROM cte);"
     db_handler.make_opertional_query(cur, clean_patients_query)
-    print('Table created')
+    clean_admissions_query = "CREATE TABLE d3sv1_admissions_mv AS "\
+        "SELECT * FROM ADMISSIONS WHERE subject_id IN (SELECT subject_id FROM d3sv1_patients_mv);"
+    db_handler.make_opertional_query(cur, clean_admissions_query)
+    print('Tables created')
 
 
 # clean and optimize the dataset, if not already, by
 # making tables that have only mv patients data
 def clean_optimize_dataset(cur):
     if check_dataset_cleaned(cur):
-        print('Dataset is already clean.')
+        print('Dataset is already filtered.')
     else:
         clean(cur)
         print('Dataset is filtered.')
