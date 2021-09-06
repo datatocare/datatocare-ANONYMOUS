@@ -23,6 +23,7 @@ DataToCare is built upon real-world clinical dataset [MIMIC-III](https://mimic.p
 Running setup will preprocessed the data which involves filtering patients to only those that have only MetaVision data, standardizing the drug data and determining time for specific diagnosis by examining nurse notes.
 To setup:
 1) download and build mimiciii with postgresql (https://github.com/MIT-LCP/mimic-code/tree/main/mimic-iii/buildmimic/postgres)
+2) Edit parameters in **./common/databse_connection_parameters.txt** to ensure connection with the mimiciii-database built in step 1. 
 2) run script **./setup/main.py**
 
 ### Prediction Pipeline
