@@ -21,7 +21,7 @@ import db_handler
 
 
 # Compile results to output actual and predicted treatment
-def cal_prec_rec(hadm_id):
+def cal_potential_results(hadm_id):
 	rdf = pd.DataFrame()
 	directory = 'results_treat_predict/' + str(hadm_id) + '/'
 

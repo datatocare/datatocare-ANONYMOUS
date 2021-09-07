@@ -29,6 +29,9 @@ Script file that process feature vectors to build prediction model for each trea
 * **helper.py** :
 Script file that get and return measurement type (categorical or numerical) information.
 
+* **cal.py** :
+Script file that compile prediction results and compute metrics of Precision, Recall and F1-score of predcitions.
+
 * **experiment_micu_testing.csv** :
 A csv file that contains patients' information for testing. subject_id is the unique identifier that specifies an individual patient, hadm_id column is patient admission id and evaltime column is the time we evaluate the patient. admittime is the admission time of patient and timediff is the time difference in hours between admission and evaluation time. It also contains age since these patients belong to hold-out set, therefore the precomputed age information is not found in the valid_admissions_wo_holdout.csv file.
 

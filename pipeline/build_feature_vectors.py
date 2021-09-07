@@ -125,7 +125,7 @@ def enrich_diagnosis_features(diag_vectors_amd_id, adm_id):
 
 
 # Take feature vectors by patient chunk and incooperate corrosponding measurement data in it
-def process_meas_times(features_vector_adm_id, pat_meas_df):
+def enrich_measurement_features(features_vector_adm_id, pat_meas_df):
 
     for row in features_vector_adm_id.itertuples():
         t = getattr(row, 'time')
@@ -143,7 +143,7 @@ def process_meas_times(features_vector_adm_id, pat_meas_df):
 
 
 # Take feature vectors by patient chunk and incooperate corrosponding treatment data in it
-def process_treat_times(features_vector_adm_id, pat_treat_df):
+def enrich_treatment_features(features_vector_adm_id, pat_treat_df):
 
     all_treats_pats = pat_treat_df.mapped_id.unique()
 
@@ -312,9 +312,9 @@ def process_measurement_vectors(meas_vectors, unique_adm_ids, items_num, items_c
             list_of_dfs = [meas_vectors_amd_id.iloc[i:i+csize-1] for i in range(0, len(meas_vectors_amd_id),csize)]
             for i in range(0, len(list_of_dfs)):
                 meas_vectors_amd_id_tmp = list_of_dfs[i]
-                meas_main_pool.apply_async(process_meas_times, args=(meas_vectors_amd_id_tmp, all_pat_meas_mp,), callback=collect_meas_data)
+                meas_main_pool.apply_async(enrich_measurement_features, args=(meas_vectors_amd_id_tmp, all_pat_meas_mp,), callback=collect_meas_data)
         else:
-            meas_main_pool.apply_async(process_meas_times, args=(meas_vectors_amd_id, all_pat_meas_mp,), callback=collect_meas_data)
+            meas_main_pool.apply_async(enrich_measurement_features, args=(meas_vectors_amd_id, all_pat_meas_mp,), callback=collect_meas_data)
 
     db_handler.close_db_connection(conn, conn.cursor())
     print('measurement vector calculation started, all sub-processes spawned')
@@ -336,8 +336,8 @@ def process_treatment_vectors(treat_vectors, unique_adm_ids, treatments_df, trea
             list_of_dfs = [treat_vectors_amd_id.iloc[i:i+csize-1] for i in range(0, len(treat_vectors_amd_id),csize)]
             for i in range(0, len(list_of_dfs)):
                 treat_vectors_amd_id_tmp = list_of_dfs[i]
-                treat_main_pool.apply_async(process_treat_times, args=(treat_vectors_amd_id_tmp, treatment_df_mp,), callback=collect_treat_data)
+                treat_main_pool.apply_async(enrich_treatment_features, args=(treat_vectors_amd_id_tmp, treatment_df_mp,), callback=collect_treat_data)
         else:
-            treat_main_pool.apply_async(process_treat_times, args=(treat_vectors_amd_id, treatment_df_mp,), callback=collect_treat_data)
+            treat_main_pool.apply_async(enrich_treatment_features, args=(treat_vectors_amd_id, treatment_df_mp,), callback=collect_treat_data)
 
     print('treatement vector calculation started, all sub-processes spawned')

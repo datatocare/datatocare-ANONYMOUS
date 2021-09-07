@@ -3,6 +3,7 @@ import build_feature_vectors
 import build_base_vectors
 import build_models_predictions
 import compute
+import cal
 import sys
 import time
 import multiprocessing 
@@ -120,9 +121,9 @@ if __name__ == "__main__":
             gc.collect()
             
             print('Vectors combined for processing by prediction script')
-            
+
             build_models_predictions.build(hadm_id,training_meas_diag_demo, training_treat, testing_meas_diag_demo, testing_treat)
-            build_models_predictions.cal_prec_rec(hadm_id)
+            build_models_predictions.cal_potential_results(hadm_id)
             done = time.time()
             elapsed = done - start
             processing_times.append(elapsed)
@@ -130,5 +131,8 @@ if __name__ == "__main__":
         else:
             print('No Similar Patient found.')
 
+    print('calculating overall results (precision, recall, F1-score')
+    cal.calculate_results(conn)
+    
     stop(conn, cur)
     input('Press anything to continue....')
