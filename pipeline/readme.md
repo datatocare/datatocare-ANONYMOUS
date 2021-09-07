@@ -6,7 +6,7 @@ File listed in the folder are scripts: main.py, compute.py, evaluate.py, find_tr
 Here is the description of each:
 
 * **main.py** :
-Main script file that handles connection to database and calls submodules to execute pipeline=. 
+Main script file that handles connection to database and calls submodules to execute pipeline. 
 
 * **compute.py**:
 Script file that using discharge measurement tables computes statistics for numerical using quantiles, all values between the10𝑡ℎ quantile and the90𝑡ℎ quantile as normal; values below the 10𝑡ℎ quantile aslow abnormal and values above the 90𝑡ℎ quantile as high abnormal values
@@ -15,14 +15,13 @@ Script file that using discharge measurement tables computes statistics for nume
 Script file that using computed statistics first evaluate given patient state and then using patient state and statistics determine all-close patients.
 
 * **find_treatments.py** :
-Script file that find all treatments given to K/all-close patients and return them as Dataframe. Also, the treatments are mapped to cleaned up drugs using the mapping table we made in task 2. 
+Script file that find all treatments given to K/all-close patients and return them as Dataframe. 
 
 * **build_base_vectors.py** :
-Script file that first finds all times for which patients have some measurement taken or diagnosis made. Then base vectors are made by incorporating features vectors (demographics, diagnosis, measurements, treatments) with initial values. In last, vectors are partitioned by patients and features type. Partitions are created to enable concurrency through multithreading and multiprocessing.
+Script file that first finds all times for which patients have some measurement taken or diagnosis made. Then base vectors are made by incorporating features vectors (demographics, diagnosis, measurements, treatments) with initial values. In last, vectors are partitioned by patients and features type. Partitions are created to enable concurrency through multiprocessing.
 
 * **build_features_vectors.py** :
-Script file that has functions that enrich features vectors. Measurement and treatment vectors are calculated using separate processes for each patient.
-Demographics and demographics are calculated using separate threads for each patient.
+Script file that has functions that enrich features vectors. Each vectors type (Measurement, Treatment, Demographics, and Diagnosis) are calculated using separate processes for each patient.
 
 * **build_models_predictions.py** :
 Script file that process feature vectors to build prediction model for each treatment.
