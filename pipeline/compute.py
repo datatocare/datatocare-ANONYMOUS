@@ -69,3 +69,4 @@ def num_comp_save(connection, p):
 def compute(conn):
     p = 80 # normal_quantile
     num_comp_save(conn, p)
+    print('Abnormal quantile ranges calculated')

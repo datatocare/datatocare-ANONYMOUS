@@ -40,17 +40,17 @@ if __name__ == "__main__":
     #compute abnormal ranges
     compute.compute(conn)
 
-    # read testing patients and dun pipeline for each of them 
+    # read testing patients and run pipeline for each of them 
     experiment = 'experiment_micu_testing.csv'
 
     pats_set = pd.read_csv(experiment)
-
+    print('Runing pipeline for each testing Patient')
     pats_set = pats_set.head(1)
     
     for row in pats_set.itertuples():
 
         hadm_id = getattr(row, 'hadm_id')
-        print('Paitent Hospital Admission Id = %.0f' % (hadm_id))
+        print('Paitent Hospital Admission ID = %.0f' % (hadm_id))
 
         t = getattr(row, 'evaltime')
 
@@ -133,6 +133,6 @@ if __name__ == "__main__":
 
     print('calculating overall results (precision, recall, F1-score')
     cal.calculate_results(conn)
-    
+
     stop(conn, cur)
     input('Press anything to continue....')
