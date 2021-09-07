@@ -44,7 +44,7 @@ if __name__ == "__main__":
     experiment = 'experiment_micu_testing.csv'
 
     pats_set = pd.read_csv(experiment)
-    print('Runing pipeline for each testing Patient')
+    print('Started pipeline to process each testing Patient')
 
     for row in pats_set.itertuples():
 
