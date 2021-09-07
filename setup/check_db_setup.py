@@ -17,7 +17,7 @@ def check_tables_exist(cur):
             pass
         else:
             print(
-                'Error: Required table{0} for Task1 does not exists in database.\n'.format(table))
+                'Error: Required table{0} for Setup does not exists in database.\n'.format(table))
             return False
     return True
 

@@ -17,8 +17,7 @@ def remove_inconsistencies(cur):
         db_handler.make_opertional_query(cur, query)
     query = "DELETE FROM {0} "\
             "where itemid in (226543, 226544, 226707, 226381, 226185, 226228, 226179, 225416, 225417, "\
-            "and itemid in (SELECT DISTINCT itemid from {0} where valuenum is null)) "\
-            "225418, 225419, 225420, 225421, 225422, 225424, 225209);".format(table[1])
+            "225418, 225419, 225420, 225421, 225422, 225424, 225209);".format(tables[1])
     db_handler.make_opertional_query(cur, query)
     print('Inconsistencies removed')
 

@@ -2,6 +2,12 @@ import pandas as pd
 import os
 import copy
 import pickle
+import random
+import math
+import sys
+# setting path for importing scripts
+sys.path.insert(1, '../common')
+import db_handler
 
 conf_interval = 0.9
 # maps proportion of values above mean
