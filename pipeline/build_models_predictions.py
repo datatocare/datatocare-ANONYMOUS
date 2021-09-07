@@ -318,7 +318,6 @@ def build(hadm_id,training_meas_diag_demo, training_treat, testing_meas_diag_dem
 		processes = []
 		print('Processing Chunk {0}'.format(count))
 		for treat in treat_chunk:
-			print(treat)
 			try:
 				p = multiprocessing.Process(target=build_attributes_model_predict, args=(ddmtr_df,ttr_df,ddmtte_df,cols_mddt,str(treat),times,states,hadm_id,))
 				p.start()
