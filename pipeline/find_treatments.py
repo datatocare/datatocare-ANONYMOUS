@@ -41,7 +41,7 @@ def read_similar_patients(hadm_id):
 
     similar_patients_df = similar_patients_df_tmp
 
-    print(similar_patients_df.head())
+    # print(similar_patients_df.head())
     print('Total number of similar patients found = %.0f' % (len(similar_patients_df)))
 
     similar_patients = similar_patients_df['hadm_id'].tolist()

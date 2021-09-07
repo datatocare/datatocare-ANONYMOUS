@@ -184,7 +184,6 @@ def build_training_testing_dataframes(hadm_id,training_meas_diag_demo, training_
 	#remove columns that are constant so doesn't add any information
 	for col in label_meas_diag_demo.columns:
 		if len(label_meas_diag_demo[col].unique()) == 1:
-			print(str(col) + ' is being removed')
 			label_meas_diag_demo.drop(col,inplace=True,axis=1)
 
 	print('Reducing data')

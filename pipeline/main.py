@@ -40,14 +40,11 @@ if __name__ == "__main__":
     #compute abnormal ranges
     compute.compute(conn)
 
-    # read testing patients and run pipeline for each of them 
+    # read testing patients and run the pipeline for each 500 patients
     experiment = 'experiment_micu_testing.csv'
 
     pats_set = pd.read_csv(experiment)
     print('Runing pipeline for each testing Patient')
-
-    pats_set = pats_set.head(3)
-    pats_set = pats_set.tail(1)
 
     for row in pats_set.itertuples():
 
@@ -55,6 +52,8 @@ if __name__ == "__main__":
         print('Paitent Hospital Admission ID = %.0f' % (hadm_id))
 
         t = getattr(row, 'evaltime')
+
+        print('Evaluation time t = ' + str(t))
 
         start = time.time()
 
