@@ -27,7 +27,7 @@ To setup:
 2) run script **./setup/main.py**
 
 ### Prediction Pipeline
-Code that will process patient and execute pipeline can be found in ./pipeline/. The pipeline directory also contains the information describing each subprocess accompanied by relevant code scripts. 
+Code that will process patient and execute pipeline can be found in ./pipeline/. The pipeline directory also contains the information describing each subprocess accompanied by relevant code scripts.  
 To execute pipeline on testing patients, run script **./pipeline/main.py**
 
 
