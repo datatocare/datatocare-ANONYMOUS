@@ -86,6 +86,8 @@ def add_match_diagnosis_with_notes(conn, cur):
     note_df = get_noteevents_table(conn)
     note_df = note_df[note_df['hadm_id'].notna()]
 
+    print('Matching notes to find time for each patients diagnosis and populating Patients diagnosis time table, it will take a while')
+
     for row in diag_df.itertuples():
 
         icd9_code = getattr(row, 'icd9_code')

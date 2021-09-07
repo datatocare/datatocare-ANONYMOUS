@@ -45,8 +45,10 @@ if __name__ == "__main__":
 
     pats_set = pd.read_csv(experiment)
     print('Runing pipeline for each testing Patient')
-    pats_set = pats_set.head(1)
-    
+
+    pats_set = pats_set.head(3)
+    pats_set = pats_set.tail(1)
+
     for row in pats_set.itertuples():
 
         hadm_id = getattr(row, 'hadm_id')

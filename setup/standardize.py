@@ -34,7 +34,6 @@ def create_mapping_table(cur, table):
             "d_items.itemid, d_items.label, 0 AS mapped_id, 0 AS mapping_level, "\
             "'clean' AS puprose FROM d_items INNER JOIN inputevents_mv on "\
             "d_items.itemid = inputevents_mv.itemid;".format(table)
-        print(create_mapping_table_query)
         db_handler.make_opertional_query(cur, create_mapping_table_query)
         print('Table created {0}'.format(table))
 
@@ -94,7 +93,7 @@ def map_aelous_data(conn, cur, table):
     aelous_map_df = pd.read_csv('mapping_inputevents_itemid_parent.csv')
     aelous_map_df['itemid'] = pd.to_numeric(aelous_map_df['itemid'])
     aelous_map_mv_df = aelous_map_df[aelous_map_df.itemid > 220000]
-    aelous_map_mv_df_filtr = aelous_map_mv_df[aelous_map_df.itemid.isin(list(unique_items))]
+    aelous_map_mv_df_filtr = aelous_map_mv_df[aelous_map_mv_df.itemid.isin(unique_items)]
     unique_aelous_labels = aelous_map_mv_df_filtr.aeolus.unique()
 
     for label in unique_aelous_labels:
@@ -104,7 +103,7 @@ def map_aelous_data(conn, cur, table):
             map_aelous_itemid_query = "INSERT INTO {0} (itemid, label, mapped_id, mapping_level, puprose) "\
                 "VALUES({1},'{2}', {3}, 1, 'aeolus');".format(table, itemid, label, offset)
             db_handler.make_opertional_query(cur, map_aelous_itemid_query)
-    print('Drug Data Strandardized and entered in new mapping table')
+    print('Drug Data Strandardized and entered in new mapping table, ')
 
 
 # Call functions to create mapping table that unify similar drugs
