@@ -96,19 +96,13 @@ def compute_average_ci(sample):
     bias_corr_lower_bound = int(math.ceil(num_resamples * (0.5 + sd_to_area(z_alpha_over_2 + (2 * z_0)))))
     bias_corr_upper_bound =  int(math.floor(num_resamples * (0.5 + sd_to_area(z_1_minus_alpha_over_2 + (2 * z_0)))))
 
-
-    print(lower_bound)
-    print(upper_bound)
-    print(bias_corr_lower_bound)
-    print(bias_corr_upper_bound)
-
     print ("Observed mean: %.2f" % observed_mean)
     print ("We have", conf_interval * 100, "% confidence that the true mean", end="")
-    print ("is between: %.2f" % out[lower_bound], "and %.2f" % out[upper_bound])
+    print (" is between: %.2f" % out[lower_bound], "and %.2f" % out[upper_bound])
 
     print ("***** Bias Corrected Confidence Interval *****")
     print ("We have", conf_interval * 100, "% confidence that the true mean", end="")
-    print ("is between: %.2f" % out[bias_corr_lower_bound], "and %.2f" % out[bias_corr_upper_bound])
+    print (" is between: %.2f" % out[bias_corr_lower_bound], "and %.2f" % out[bias_corr_upper_bound])
 
 
 # for each patient, Compile results to output actual and predicted treatment
@@ -218,6 +212,7 @@ def calculate_results(conn):
     df = pd.DataFrame()
 
     for row in pset.itertuples():
+
         hadm_id = getattr(row, 'hadm_id')
         time = getattr(row, 'evaltime')
         
