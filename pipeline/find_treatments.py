@@ -9,10 +9,10 @@ import db_handler
 import evaluate
 
 
-# read similar patients hadm_ids from pickel created by evaluate of task 1
+# read similar patients hadm_ids from pickel created by evaluate script
 def read_similar_patients(hadm_id):
-    os.chdir("../task_1")
-    similar_patients_pkl = 'results/' + str(hadm_id) + "_similar_patients.pkl"
+
+    similar_patients_pkl = 'results_sim_pats/' + str(hadm_id) + "_similar_patients.pkl"
     similar_patients_df = pd.DataFrame(columns = ['hadm_id','score'])
 
     with open(similar_patients_pkl, "rb") as f:
@@ -25,18 +25,25 @@ def read_similar_patients(hadm_id):
             similar_patients_df = similar_patients_df.append(
                         tmp_pat_dict, ignore_index=True)
 
-    similar_patients_df = similar_patients_df[similar_patients_df.score >= 70]
-    os.chdir("../task_4")
-    val_pats = pd.read_csv('valid_admissions_age.csv')
-    valid_hadmids = val_pats.hadm_id.tolist()
     similar_patients_df['hadm_id'] = similar_patients_df['hadm_id'].astype(int)
+    similar_patients_df['score'] = similar_patients_df['score'].astype(float)
+    similar_patients_df = similar_patients_df.sort_values(by=['score'], ascending=False)
+
+    val_pats = pd.read_csv('valid_admissions_wo_holdout.csv')
+    valid_hadmids = val_pats.hadm_id.tolist()
     similar_patients_df = similar_patients_df[similar_patients_df['hadm_id'].isin(valid_hadmids)]
 
-    if len(similar_patients_df) >= 200:
-        similar_patients_df = similar_patients_df.sort_values(by=['score'], ascending=False)
-        similar_patients_df = similar_patients_df.head(200)
+    similar_patients_df_tmp = similar_patients_df[similar_patients_df.score >= 70]
+    if len(similar_patients_df_tmp) < 100:
+        similar_patients_df_tmp = similar_patients_df.head(100)
+    else:
+        similar_patients_df_tmp = similar_patients_df_tmp.head(200)
 
-    print(len(similar_patients_df))
+    similar_patients_df = similar_patients_df_tmp
+
+    print(similar_patients_df.head())
+    print('Total number of similar patients found = %.0f' % (len(similar_patients_df)))
+
     similar_patients = similar_patients_df['hadm_id'].tolist()
     return similar_patients
 
@@ -67,7 +74,7 @@ def get_all_treatments(conn, hadm_id, similar_patients):
     return all_treat_df
 
 
-# Build diagnosis vector by calling all required functions
+# find similar patients and treatments given to them
 def find(conn, cur, hadm_id,t):
     evaluate.evaluate(conn, hadm_id,t)
     similar_patients = read_similar_patients(hadm_id)
@@ -75,4 +82,3 @@ def find(conn, cur, hadm_id,t):
         return similar_patients,get_all_treatments(conn, hadm_id, similar_patients)
     else:
         return [], pd.DataFrame()
-

@@ -9,7 +9,7 @@ sys.path.insert(1, '../common')
 import db_handler
 
 
-# start task 1, by initiating a connection to database
+# start setup, by initiating a connection to database
 # return connection as conn and cursor as cur
 def start():
     conn = db_handler.intialize_database_handler()
@@ -17,7 +17,7 @@ def start():
     return conn, cur
 
 
-# stop task 1, by closing open connection and cursor to database
+# stop setup, by closing open connection and cursor to database
 # return connection and cursor
 def stop(conn, cur):
     db_handler.close_db_connection(conn, cur)

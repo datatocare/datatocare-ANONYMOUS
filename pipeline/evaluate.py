@@ -7,14 +7,6 @@ sys.path.insert(1, '../common')
 import db_handler
 
 
-# read parameters patients_similarity_percentage from parameters.txt
-def read_patient_simlrty():
-    with open('parameters.txt') as fp:
-        parameters = fp.read().splitlines()
-        sim_per = parameters[1].split('= ')[1]
-    return int(sim_per)
-
-
 # Get label and itemid from d_items, d_labitems
 def get_label_itemid(conn, table):
     df_query = "Select itemid, label from {0}".format(table)
@@ -26,7 +18,7 @@ def output_patient_stats(conn, df_user_meas_abnr_num, hadm_id):
     d_items_df = get_label_itemid(conn, 'd_items')
     d_labitems_df = get_label_itemid(conn, 'd_labitems')
     df_labels = d_items_df.append(d_labitems_df, ignore_index=True)
-    direc = 'results/'
+    direc = 'results_sim_pats/'
     with open(direc + str(hadm_id) + '_patient_stats.txt', 'w') as fp:
         for index, row in df_user_meas_abnr_num.iterrows():
             out_str = ''
@@ -40,7 +32,7 @@ def output_patient_stats(conn, df_user_meas_abnr_num, hadm_id):
  # Output similar patients as subject id, admission id as hadm_id
  # and similarity score
 def output_similar_patient(similar_patients, hadm_id):
-    direc = 'results/'
+    direc = 'results_sim_pats/'
     with open(direc + str(hadm_id) + '_similar_patient.txt', 'w') as fp:
         for pat in similar_patients:
             out_str = 'Subject_id : {0}, Hadm_id : {1}, and Score = {2} \n'.format(
@@ -194,14 +186,17 @@ def find_similar_patients(
 
 # Call functions that evaluate given patient state and and determine close patients.
 def evaluate(conn, hadm_id = 0, t = ''):
-    os.chdir("../task_1")
+    # directory that will contain each testing patient abnormals at time t and similar patients
+    result_directory = 'results_sim_pats' 
+    if not os.path.exists(result_directory):
+        os.makedirs(result_directory)
     t = "\'" + t + "\'"
-    sim_per = read_patient_simlrty()
+    lower_sim_per = 50
     user_meas_num = find_user_meas(conn, hadm_id, t, 0)
     df_user_meas_abnr_num = label_abnormal_user_meas(user_meas_num, 0)
     output_patient_stats(conn, df_user_meas_abnr_num, hadm_id)
     find_similar_patients(
         conn,
         df_user_meas_abnr_num,
-        sim_per,
+        lower_sim_per,
         hadm_id)

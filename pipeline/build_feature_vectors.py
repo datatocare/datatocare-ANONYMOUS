@@ -2,56 +2,113 @@ import pandas as pd
 import sys
 import numpy as np
 import multiprocessing
-import threading
 import time
 import os
 import pickle
 
 # setting path for importing scripts in external folder
 sys.path.insert(1, '../common')
-sys.path.insert(3, '../task_3')
 import db_handler
-import build_diagnosis
-import build_measurement
+
+
+#global variables to be used instead of filing
+demo_vector_data = []
+diag_vector_data = []
+meas_vector_data = []
+treat_vector_data = []
+
+def clear(): 
+    del demo_vector_data[:]
+    del diag_vector_data[:]
+    del meas_vector_data[:]
+    del treat_vector_data[:]
+
+def collect_demo_data(result):
+    demo_vector_data.extend(result)
+
+def collect_diag_data(result):
+    diag_vector_data.extend(result)
+
+def collect_meas_data(result):
+    meas_vector_data.extend(result)
+
+def collect_treat_data(result):
+    # print('appending data')
+    treat_vector_data.extend(result)
+
+def get_demo_vector_data(cols):
+    dvd_df = pd.DataFrame(demo_vector_data, columns=cols)
+    return dvd_df
+
+def get_diag_vector_data(cols):
+    divd_df = pd.DataFrame(diag_vector_data, columns=cols)
+    return divd_df
+
+def get_meas_vector_data(cols):
+    mvd_df = pd.DataFrame(meas_vector_data, columns=cols)
+    return mvd_df
+
+def get_treat_vector_data(cols):
+    tvd_df = pd.DataFrame(treat_vector_data, columns=cols)
+    return tvd_df
+
+
+# For a given admission, return ICU types patient is admitted.
+def get_icu_types(conn, hadm_id):
+    icu_type_query = "SELECT curr_careunit, intime, outtime FROM transfers WHERE hadm_id = {0}"\
+        ";".format(hadm_id)
+    icu_type_df = db_handler.make_selection_query(conn, icu_type_query)
+    return icu_type_df
 
 
 # Take feature vectors by patient and incooperate corrosponding demagrohic data in it
-def enrich_demographic_features(adm_id, demo_data_adm_id):
+def enrich_demographic_features(demo_vectors_amd_id, adm_id, demo_data_adm_id):
     
     conn = db_handler.intialize_database_handler()
 
-    pkl_file_demo = 'enrich_demo/fv_'
-    
-    features_vector_adm_id = pd.read_pickle(pkl_file_demo + str(adm_id) + '.pkl')
-    val_pats = pd.read_csv('valid_admissions_age.csv')
+    val_pats = pd.read_csv('valid_admissions_wo_holdout.csv')
     val_pats = val_pats[val_pats.hadm_id == adm_id]
 
     if len(val_pats) < 1:
-        val_pats = pd.read_csv('pat_set.csv')
+        val_pats = pd.read_csv('experiment_micu_testing.csv')
         val_pats = val_pats[val_pats.hadm_id == adm_id]
 
-    features_vector_adm_id['age'] = val_pats['age'].iloc[0]
-    features_vector_adm_id['ethnicity'] = demo_data_adm_id['ethnicity']
-    features_vector_adm_id['gender'] = demo_data_adm_id['gender']
-    features_vector_adm_id['insurance'] = demo_data_adm_id['insurance']
+    demo_vectors_amd_id['age'] = val_pats['age'].iloc[0]
+    demo_vectors_amd_id['ethnicity'] = demo_data_adm_id['ethnicity']
+    demo_vectors_amd_id['gender'] = demo_data_adm_id['gender']
+    demo_vectors_amd_id['insurance'] = demo_data_adm_id['insurance']
+    icu_type_df = get_icu_types(conn, adm_id)
 
-    features_vector_adm_id.to_pickle(pkl_file_demo + str(adm_id) + '.pkl')
+    for row in demo_vectors_amd_id.itertuples():
+        t = getattr(row, 'time')
+        icu_type_df_tmp = icu_type_df[ (icu_type_df.intime <= t) & (icu_type_df.outtime >= t)]
+
+        if not icu_type_df_tmp.empty:
+            icu_type = icu_type_df_tmp['curr_careunit'].iloc[0]
+            demo_vectors_amd_id.at[row.Index, 'icu_type'] = icu_type
 
     db_handler.close_db_connection(conn, conn.cursor())
 
+    return demo_vectors_amd_id.values.tolist()
+
+
+# Read all diagnosis performed on a specific admission unitll some time t
+# called by build_output_group_diagnosis_vector_specific
+def get_diagnosis_time_data_specific(conn, hadm_id):
+    diag_time_df_query = "SELECT * FROM d3sv1_patient_diagnosis_time "\
+        "WHERE hadm_id = {0}".format(hadm_id)
+    return db_handler.make_selection_query(conn, diag_time_df_query)
+
 
 # Take feature vectors by patient and incooperate corrosponding diagnosis data in it
-def enrich_diagnosis_features(adm_id):
+def enrich_diagnosis_features(diag_vectors_amd_id, adm_id):
+    
     conn = db_handler.intialize_database_handler()
 
-    pkl_file_diag = 'enrich_diag/fv_'
-
-    features_vector_adm_id = pd.read_pickle(pkl_file_diag + str(adm_id) + '.pkl')
-
-    pat_diag_df = build_diagnosis.get_diagnosis_time_data_specific(
+    pat_diag_df = get_diagnosis_time_data_specific(
             conn, adm_id)
 
-    for row in features_vector_adm_id.itertuples():
+    for row in diag_vectors_amd_id.itertuples():
         t = getattr(row, 'time')
 
         pat_diag_df_tmp = pat_diag_df[pat_diag_df.timestamp <= t]
@@ -60,15 +117,15 @@ def enrich_diagnosis_features(adm_id):
                 pat_diag_df_grp = pat_diag_df_tmp[pat_diag_df_tmp.higher_group == (
                     j + 1)]
                 if len(pat_diag_df_grp) > 0:
-                    features_vector_adm_id.at[row.Index, 'diagnosis_group_' + str(j + 1)] = 1
-
-    features_vector_adm_id.to_pickle(pkl_file_diag + str(adm_id) + '.pkl')
+                    diag_vectors_amd_id.at[row.Index, 'diagnosis_group_' + str(j + 1)] = 1
 
     db_handler.close_db_connection(conn, conn.cursor())
 
+    return diag_vectors_amd_id.values.tolist()
+
 
 # Take feature vectors by patient chunk and incooperate corrosponding measurement data in it
-def process_meas_times(features_vector_adm_id, chunk_pkl_name, pat_meas_df):
+def process_meas_times(features_vector_adm_id, pat_meas_df):
 
     for row in features_vector_adm_id.itertuples():
         t = getattr(row, 'time')
@@ -82,13 +139,11 @@ def process_meas_times(features_vector_adm_id, chunk_pkl_name, pat_meas_df):
 
             features_vector_adm_id.at[row.Index,  cols_itms] = lst_meas
 
-    features_vector_adm_id.to_pickle(chunk_pkl_name)
-
-    del features_vector_adm_id
+    return features_vector_adm_id.values.tolist()
 
 
 # Take feature vectors by patient chunk and incooperate corrosponding treatment data in it
-def process_treat_times(features_vector_adm_id, chunk_pkl_name, pat_treat_df):
+def process_treat_times(features_vector_adm_id, pat_treat_df):
 
     all_treats_pats = pat_treat_df.mapped_id.unique()
 
@@ -111,12 +166,12 @@ def process_treat_times(features_vector_adm_id, chunk_pkl_name, pat_treat_df):
             unique_trmts = pat_treat_df_tmp.mapped_id.unique()
             
             cols_trmts_rcncy = list(map(lambda x: str(x) + '_recency' , unique_trmts))
-            cols_trmts_gvn_nxt_4 = list(map(lambda x: str(x) + '_given_nxt_4' , unique_trmts))
-
+            cols_trmts_gvn_nxt = list(map(lambda x: str(x) + '_given_nxt' , unique_trmts))
             features_vector_adm_id.at[row.Index,  cols_trmts_rcncy] = 0
-            features_vector_adm_id.at[row.Index,  cols_trmts_gvn_nxt_4] = 1
-        
-        tgn_4 = pd.to_datetime(t) + pd.DateOffset(hours=2)
+            features_vector_adm_id.at[row.Index,  cols_trmts_gvn_nxt] = 1
+
+        tgn = pd.to_datetime(t) + pd.DateOffset(hours=2)
+
         othr_trmts = list(set(all_treats_pats) - set(unique_trmts))
 
         pat_treat_df_tmp_trmts = pat_treat_df[pat_treat_df.mapped_id.isin(othr_trmts)]
@@ -133,122 +188,17 @@ def process_treat_times(features_vector_adm_id, chunk_pkl_name, pat_treat_df):
             features_vector_adm_id.at[row.Index,  cols_trmts_rcncy] = rmins
 
         pat_treat_df_tmp = pat_treat_df_tmp_trmts[pat_treat_df_tmp_trmts.starttime > t]
-        pat_treat_df_tmp_4 = pat_treat_df_tmp[pat_treat_df_tmp.starttime <= tgn_4]
+        pat_treat_df_tmp = pat_treat_df_tmp[pat_treat_df_tmp.starttime <= tgn]
 
-        if not pat_treat_df_tmp_4.empty:
-            cols_trmts_gvn_nxt = list(map(lambda x: str(x) + '_given_nxt_4' , pat_treat_df_tmp_4.mapped_id.unique()))
+        if not pat_treat_df_tmp.empty:
+            cols_trmts_gvn_nxt = list(map(lambda x: str(x) + '_given_nxt' , pat_treat_df_tmp.mapped_id.unique()))
             features_vector_adm_id.at[row.Index,  cols_trmts_gvn_nxt] = 1
 
-    features_vector_adm_id.to_pickle(chunk_pkl_name)
-
-    del features_vector_adm_id
-
-
-# Take feature vectors by patient and made its chunks and call 
-# corresponding calculation function
-def chuk_features_vectors_spawn_cals(adm_id, pat_df, ftype):
-    
-    if ftype == 0:
-        pkl_file = 'enrich_meas/fv_'
-        log_stmt = 'Sub process function measuremnt ended'
-        csize = 1000
-        size = 1000
-    else:
-        pkl_file = 'enrich_treat/fv_'
-        log_stmt = 'Sub process function treatment ended'
-        csize = 1000
-        size = 1000
-
-    features_vector_adm_id = pd.read_pickle(pkl_file + str(adm_id) + '.pkl')
-    
-
-    if len(features_vector_adm_id) > size:
-        list_of_dfs = [features_vector_adm_id.iloc[i:i+csize-1] for i in range(0, len(features_vector_adm_id),csize)]
-        processes = []
-        for i in range(0, len(list_of_dfs)):
-            features_vector_adm_id_df = list_of_dfs[i]
-            try:
-                chunk_pkl_name = pkl_file + str(adm_id) + '_'+ str(i) + '.pkl'
-                if not ftype:
-                    p = multiprocessing.Process(target=process_meas_times, args=(features_vector_adm_id_df,chunk_pkl_name,pat_df,))
-                else:
-                    p = multiprocessing.Process(target=process_treat_times, args=(features_vector_adm_id_df,chunk_pkl_name,pat_df,))
-                p.start()
-            except:
-                print("Error: unable to start Process")
-                exit(0)
-            processes.append(p)
-        
-        # Wait all process to finish.
-        for p in processes:
-            p.join()  
-            p.terminate()
-
-        features_vector_adm_id = pd.DataFrame()
-
-        for i in range(0, len(list_of_dfs)):
-            features_vector_adm_id_tmp = pd.read_pickle(pkl_file + str(adm_id) + '_'+ str(i) + '.pkl')
-            features_vector_adm_id = features_vector_adm_id.append(features_vector_adm_id_tmp, ignore_index=True)
-
-        features_vector_adm_id.to_pickle(pkl_file + str(adm_id) + '.pkl')
-    else:
-        if not ftype:
-            process_meas_times(features_vector_adm_id, pkl_file + str(adm_id) + '.pkl', pat_df)
-        else:
-            process_treat_times(features_vector_adm_id, pkl_file + str(adm_id) + '.pkl', pat_df)
-
-
-# return traning and testing data related to measurement, diagnosis and treatment vectors
-def output_combine_features_vectors(unique_adm_ids, target_adm_id, items_num, items_cat):
-
-    #Input different vectors types
-    pkl_file_demo = 'enrich_demo/fv_'
-    pkl_file_diag = 'enrich_diag/fv_'
-    pkl_file_meas = 'enrich_meas/fv_'
-    pkl_file_treat = 'enrich_treat/fv_'
-
-    features_vectors_demo_diag_meas_train = pd.DataFrame()
-    features_vectors_treat_train = pd.DataFrame()
-    features_vectors_demo_diag_meas_test = pd.DataFrame()
-    features_vectors_treat_test = pd.DataFrame()
-
-    for adm_id in unique_adm_ids:
-
-        df_demo = pd.read_pickle(pkl_file_demo + str(adm_id) + '.pkl')
-        df_diag = pd.read_pickle(pkl_file_diag + str(adm_id) + '.pkl')
-        df_meas = pd.read_pickle(pkl_file_meas + str(adm_id) + '.pkl')
-
-        df_treat = pd.read_pickle(pkl_file_treat + str(adm_id) + '.pkl')
-
-        df_tmp = pd.merge(df_demo, df_diag, on=['time','hadm_id'])
-        df_tmp = pd.merge(df_tmp, df_meas,  on=['time','hadm_id'])
-
-        features_vectors_demo_diag_meas_train = features_vectors_demo_diag_meas_train.append(df_tmp, ignore_index=True)
-        features_vectors_treat_train = features_vectors_treat_train.append(df_treat, ignore_index=True)
-
-    df_demo = pd.read_pickle(pkl_file_demo + str(target_adm_id) + '.pkl')
-    df_diag = pd.read_pickle(pkl_file_diag + str(target_adm_id) + '.pkl')
-    df_meas = pd.read_pickle(pkl_file_meas + str(target_adm_id) + '.pkl')
-
-    df_treat = pd.read_pickle(pkl_file_treat + str(target_adm_id) + '.pkl')
-
-    df_tmp = pd.merge(df_demo, df_diag, on=['time','hadm_id'])
-    df_tmp = pd.merge(df_tmp, df_meas,  on=['time','hadm_id'])
-
-    features_vectors_demo_diag_meas_test = features_vectors_demo_diag_meas_test.append(df_tmp, ignore_index=True)
-
-    features_vectors_treat_test = features_vectors_treat_test.append(df_treat, ignore_index=True)
-
-    features_vectors_demo_diag_meas = features_vectors_demo_diag_meas_train.append(features_vectors_demo_diag_meas_test, ignore_index=True)
-
-    features_vectors_demo_diag_meas_train = features_vectors_demo_diag_meas[features_vectors_demo_diag_meas.hadm_id != target_adm_id]
-    features_vectors_demo_diag_meas_test = features_vectors_demo_diag_meas[features_vectors_demo_diag_meas.hadm_id == target_adm_id]
-    
-    return features_vectors_demo_diag_meas_train,features_vectors_treat_train,features_vectors_demo_diag_meas_test,features_vectors_treat_test
+    return features_vector_adm_id.values.tolist()
 
 
 #Start K threads to process demographic vector of each patient
-def process_demogrphic_vectors(unique_adm_ids):
+def process_demogrphic_vectors(demo_vectors, unique_adm_ids, demo_main_pool):
 
     print("in function process_demogrphic_vectors")
 
@@ -266,52 +216,73 @@ def process_demogrphic_vectors(unique_adm_ids):
         "WHERE hadm_id IN " + tmp_pats_query + ';'
     demo_data = db_handler.make_selection_query(conn, demo_data_query)
     
-    processes = []
-    for adm_id in unique_adm_ids:
-
+    for adm_id in unique_adm_ids: 
         demo_data_adm_id = demo_data[demo_data.hadm_id == adm_id].iloc[0]
-
+        demo_vectors_amd_id = demo_vectors[demo_vectors.hadm_id == adm_id]
         if not demo_data_adm_id.empty:
-            try:
-                p = multiprocessing.Process(target=enrich_demographic_features, args=(adm_id, demo_data_adm_id,))
-                p.start()
-            except:
-                print("Error: unable to start Process")
-                exit(0)
-            processes.append(p)
-    
-    # Wait all processes to finish.
-    for p in processes:
-        p.join()
-    
+            demo_main_pool.apply_async(enrich_demographic_features, args=(demo_vectors_amd_id, adm_id, demo_data_adm_id,), callback=collect_demo_data)
+
     db_handler.close_db_connection(conn, conn.cursor())
 
-    print('Demographic vector calculated')
+    print('Demographic vector calculation started, all sub-processes spawned')
 
 
 #Start K threads to process diagnosis vector of each patient
-def process_diagnosis_vectors(unique_adm_ids):
+def process_diagnosis_vectors(diag_vectors, unique_adm_ids, diag_main_pool):
     
-    processes = []
-    for adm_id in unique_adm_ids:
-        try:
-            p = multiprocessing.Process(target=enrich_diagnosis_features, args=(adm_id,))
-            p.start()
-            #print('Process Started')
-        except:
-            print("Error: unable to start thread")
-            exit(0)
-        processes.append(p)
-    
-    # Wait all process to finish.
-    for p in processes:
-        p.join()
+    print("in function process_diagnosis_vectors")
 
-    print('Diagnosis vector calculated')
+    for adm_id in unique_adm_ids: 
+        
+        diag_vectors_amd_id = diag_vectors[diag_vectors.hadm_id == adm_id]
+        diag_main_pool.apply_async(enrich_diagnosis_features, args=(diag_vectors_amd_id, adm_id,), callback=collect_diag_data)
+
+    print('Diagnosis vector calculation started, all sub-processes spawned')
+
+
+# Read all measurements of a specific admission
+# for specific itemids or measurements
+#return measurements as dataframe
+def get_measurement_data_specific_items(conn, unique_adm_ids, items, meas_type, table):
+
+    meas_time_df_query = ''
+    if not meas_type:
+        meas_time_df_query = "SELECT hadm_id,itemid,valuenum as value,charttime, 0 as type FROM {0} "\
+        "WHERE hadm_id in (".format(table)
+    else:
+        meas_time_df_query = "SELECT hadm_id,itemid,value,charttime, 1 as type FROM {0} "\
+        "WHERE hadm_id in (".format(table)
+    
+    for adm_id in unique_adm_ids:
+        meas_time_df_query = meas_time_df_query + str(adm_id) + ', '
+    meas_time_df_query = ", ".join(meas_time_df_query.split(", ")[0:-1])
+    meas_time_df_query = meas_time_df_query + ') '
+    
+    if not meas_type:
+        meas_time_df_query = meas_time_df_query + 'and valuenum is not null and itemid in ('
+    else:
+        meas_time_df_query = meas_time_df_query + 'and valuenum is null and itemid in ('
+
+    if not len(items):
+        return pd.DataFrame()
+    
+    meas_time_df_query_itm = ''
+    for itm in items:
+        meas_time_df_query_itm = meas_time_df_query_itm + str(itm) + ', '
+    meas_time_df_query_itm = ", ".join(meas_time_df_query_itm.split(", ")[0:-1])
+
+    if meas_time_df_query_itm:
+        meas_time_df_query = meas_time_df_query + meas_time_df_query_itm + ');'
+        return db_handler.make_selection_query(conn, meas_time_df_query)
+    else:
+        return pd.DataFrame()
 
 
 #Start K processes to process measurement vector of each patient
-def process_measurement_vectors(unique_adm_ids, items_num, items_cat):
+def process_measurement_vectors(meas_vectors, unique_adm_ids, items_num, items_cat, meas_main_pool):
+
+    print("in function process_measurement_vectors")
+
     conn = db_handler.intialize_database_handler()
 
     items_num_lab = items_num[items_num.itemid < 220000]
@@ -319,67 +290,54 @@ def process_measurement_vectors(unique_adm_ids, items_num, items_cat):
     items_cat_lab = items_cat[items_cat.itemid < 220000]
     items_cat_chart = items_cat[items_cat.itemid > 220000]
 
-    all_pat_meas_num_chart_df = build_measurement.get_measurement_data_specific_items(
+    all_pat_meas_num_chart_df = get_measurement_data_specific_items(
         conn, unique_adm_ids, items_num_chart.itemid, 0, 'd3sv1_chartevents_mv')
-    all_pat_meas_num_lab_df = build_measurement.get_measurement_data_specific_items(
+    all_pat_meas_num_lab_df = get_measurement_data_specific_items(
         conn, unique_adm_ids, items_num_lab.itemid, 0, 'd3sv1_labevents_mv')
-    all_pat_meas_cat_chart_df = build_measurement.get_measurement_data_specific_items(
+    all_pat_meas_cat_chart_df = get_measurement_data_specific_items(
         conn, unique_adm_ids, items_cat_chart.itemid, 1, 'd3sv1_chartevents_mv')
-    all_pat_meas_cat_lab_df = build_measurement.get_measurement_data_specific_items(
+    all_pat_meas_cat_lab_df = get_measurement_data_specific_items(
         conn, unique_adm_ids, items_cat_lab.itemid, 1, 'd3sv1_labevents_mv')
 
-    
     all_pat_meas_num = all_pat_meas_num_chart_df.append(all_pat_meas_num_lab_df, ignore_index=True)
     all_pat_meas_cat = all_pat_meas_cat_chart_df.append(all_pat_meas_cat_lab_df, ignore_index=True)
     all_pat_meas = all_pat_meas_num.append(all_pat_meas_cat, ignore_index=True)
     all_pat_meas.sort_values(by=['charttime'], ascending=False,  inplace=True)
 
-    chunks = [unique_adm_ids[x:x+100] for x in range(0, len(unique_adm_ids), 100)]
-    #print(len(chunks))
-    for adm_chunk in chunks:
-        processes = []
-        for adm_id in adm_chunk:
-            try:
-                all_pat_meas_mp = all_pat_meas[all_pat_meas.hadm_id == adm_id]
-                p = multiprocessing.Process(target=chuk_features_vectors_spawn_cals, args=(adm_id, all_pat_meas_mp,0,))
-                p.start()
-                #print('Process Measurement Started')
-            except:
-                #print("Error: unable to start Process")
-                exit(0)
-            processes.append(p)
-    
-        # Wait all process chunks to finish.
-        for p in processes:
-            p.join()   
-            p.terminate()
+    for adm_id in unique_adm_ids: 
+        all_pat_meas_mp = all_pat_meas[all_pat_meas.hadm_id == adm_id]
+        meas_vectors_amd_id = meas_vectors[meas_vectors.hadm_id == adm_id]
+        if len(meas_vectors_amd_id) > 5000:
+            csize = 2500
+            list_of_dfs = [meas_vectors_amd_id.iloc[i:i+csize-1] for i in range(0, len(meas_vectors_amd_id),csize)]
+            for i in range(0, len(list_of_dfs)):
+                meas_vectors_amd_id_tmp = list_of_dfs[i]
+                meas_main_pool.apply_async(process_meas_times, args=(meas_vectors_amd_id_tmp, all_pat_meas_mp,), callback=collect_meas_data)
+        else:
+            meas_main_pool.apply_async(process_meas_times, args=(meas_vectors_amd_id, all_pat_meas_mp,), callback=collect_meas_data)
 
     db_handler.close_db_connection(conn, conn.cursor())
-    print('measurement vector calculated')
+    print('measurement vector calculation started, all sub-processes spawned')
 
 
 #Start K processes to process treatment vector of each patient
-def process_treatment_vectors(unique_adm_ids, treatments_df):
+def process_treatment_vectors(treat_vectors, unique_adm_ids, treatments_df, treat_main_pool):
+    
+    print("in function process_treatment_vectors")
+
     treatments_df.sort_values(by=['endtime'], ascending=False,  inplace=True)
 
-    chunks = [unique_adm_ids[x:x+100] for x in range(0, len(unique_adm_ids), 100)]
+    for adm_id in unique_adm_ids: 
+        treatment_df_mp = treatments_df[treatments_df.hadm_id == adm_id]
+        treat_vectors_amd_id = treat_vectors[treat_vectors.hadm_id == adm_id]
 
-    for adm_chunk in chunks:
-        processes = []
-        for adm_id in adm_chunk:
-            try:
-                treatment_df_mp = treatments_df[treatments_df.hadm_id == adm_id]
-                p = multiprocessing.Process(target=chuk_features_vectors_spawn_cals, args=(adm_id, treatment_df_mp,1,))
-                p.start()
-                #print('Process Treatment Started')
-            except:
-                #print("Error: unable to start Process")
-                exit(0)
-            processes.append(p)
-        
-        # Wait all process chunks to finish.
-        for p in processes:
-            p.join()
-            p.terminate()
+        if len(treat_vectors_amd_id) > 5000:
+            csize = 2500
+            list_of_dfs = [treat_vectors_amd_id.iloc[i:i+csize-1] for i in range(0, len(treat_vectors_amd_id),csize)]
+            for i in range(0, len(list_of_dfs)):
+                treat_vectors_amd_id_tmp = list_of_dfs[i]
+                treat_main_pool.apply_async(process_treat_times, args=(treat_vectors_amd_id_tmp, treatment_df_mp,), callback=collect_treat_data)
+        else:
+            treat_main_pool.apply_async(process_treat_times, args=(treat_vectors_amd_id, treatment_df_mp,), callback=collect_treat_data)
 
-    print('treatement vector calculated')
+    print('treatement vector calculation started, all sub-processes spawned')

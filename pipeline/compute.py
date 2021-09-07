@@ -6,13 +6,6 @@ import sys
 sys.path.insert(1, '../common')
 import db_handler
 
-# read parameters P% percentile middle range from parameters.txt
-def read_parameters():
-    with open('parameters.txt') as fp:
-        parameters = fp.read().splitlines()
-        p = parameters[0].split('= ')[1]
-    return int(p)
-
 
 # Get dataframe corresponding to specific table and where clause
 def get_table_df(connection, table, where):
@@ -33,9 +26,9 @@ def get_disch_measr(connection, meas_type):
         df_numeric_labevents = get_table_df(connection, tables[1], where_num)
         df_numeric = df_numeric_chartevents.append(
             df_numeric_labevents, ignore_index=True)
-        # to make sure hold out set patients are not included in measurement abnormality calculation
-        pat_hold_out = pd.read_csv('pat_hold_out.csv')
-        df_numeric = df_numeric[~df_numeric.hadm_id.isin(pat_hold_out.hadm_id.unique().tolist())]
+        # to make sure only tuning patients are included in measurement abnormality calculation
+        valid_pats = pd.read_csv('valid_admissions_wo_holdout.csv')
+        df_numeric = df_numeric[df_numeric.hadm_id.isin(valid_pats.hadm_id.unique().tolist())]
         return df_numeric
 
 
@@ -56,9 +49,6 @@ def compute_numeric(connection, p):
     df_numeric_itemids = df_numeric.itemid.unique()
     for itemid in df_numeric_itemids:
         df_itemid_valnum = df_numeric[df_numeric.itemid == itemid].valuenum
-        if(len(df_itemid_valnum)) == 1:
-            print('problem')
-            print(itemid)
         itemid_cmpt = percentile_confidence_interval(df_itemid_valnum, p)
         itemid_cmpt_vals = [*itemid_cmpt]
         itemid_cmpt_dict = {
@@ -77,5 +67,5 @@ def num_comp_save(connection, p):
 
 # Call functions to compute measurements statistics
 def compute(conn):
-    p = read_parameters()
+    p = 80 # normal_quantile
     num_comp_save(conn, p)

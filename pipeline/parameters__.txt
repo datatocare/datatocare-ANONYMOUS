@@ -1,2 +1,0 @@
-normal_quantile = 80
-patients_similarity_percentage = 50
