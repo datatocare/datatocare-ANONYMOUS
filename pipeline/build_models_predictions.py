@@ -77,10 +77,10 @@ def build_model(X_train,Y_train,X_test,Y_test,times,states,treat,hadm_id,version
 # Build attributes and models by calling relevant function if memory is available 
 def build_attributes_model_predict(ddmtr_df,ttr_df,ddmtte_df,cols_mddt,treat,times,states,hadm_id):
 
-	print('Building attributes')
+	print('Building attributes for treatment : ' + str(treat))
 	X_train,Y_train_2,X_test,Y_test_2 = build_attributes_label(ddmtr_df,ttr_df,ddmtte_df,cols_mddt,treat)
 
-	print('Building model')
+	print('Building model for treatment : ' + str(treat))
 	build_model(X_train,Y_train_2,X_test,Y_test_2,times,states,treat,hadm_id,2)
 
 
@@ -287,9 +287,9 @@ def build(hadm_id,training_meas_diag_demo, training_treat, testing_meas_diag_dem
 	print('build training/testing data, preiction models called')
 
 	# directory that will contain each testing patient prediction results
-    result_directory = 'results_treat_predict' 
-    if not os.path.exists(result_directory):
-        os.makedirs(result_directory)
+	result_directory = 'results_treat_predict' 
+	if not os.path.exists(result_directory):
+		os.makedirs(result_directory)
 
 	ddmtr_df,ttr_df,ddmtte_df,cols_mddt = build_training_testing_dataframes(hadm_id,training_meas_diag_demo, training_treat, testing_meas_diag_demo, testing_treat)
 
