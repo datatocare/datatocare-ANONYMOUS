@@ -126,12 +126,11 @@ if __name__ == "__main__":
             build_models_predictions.cal_potential_results(hadm_id)
             done = time.time()
             elapsed = done - start
-            processing_times.append(elapsed)
             print('Total time taken to process patient : ' + str(elapsed))
         else:
             print('No Similar Patient found.')
 
-    print('calculating overall results (precision, recall, F1-score')
+    print('calculating overall results (precision, recall, F1-score)')
     cal.calculate_results(conn)
 
     stop(conn, cur)

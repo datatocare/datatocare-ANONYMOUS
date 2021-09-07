@@ -53,7 +53,6 @@ def bootstrap(x):
 
 # compute average and confidence interval for recall, precision and F1-score
 def compute_average_ci(sample):
-    sample = rc
     observed_mean = mean(sample)
 
     num_resamples = 10000   # number of times we will resample from our original samples
@@ -113,9 +112,9 @@ def compute_average_ci(sample):
 
 
 # for each patient, Compile results to output actual and predicted treatment
-def compile_results(hadm_id,time,td, tdf_tmp, ver):
+def compile_results(hadm_id,time,td, tdf_tmp):
     
-    print(tdf_tmp.mapped_id.unique().tolist())
+
     rdf = pd.DataFrame()
     df_pat = pd.DataFrame(columns=['patient','treatment','t','time_diff_from_admission','h-value','actual','predicted'])
 
@@ -150,9 +149,7 @@ def compile_results(hadm_id,time,td, tdf_tmp, ver):
         predicted_treats = rdf_tmp_2.treatment.unique().tolist()
         predicted_treats = [int(x) for x in predicted_treats]
         treatments.extend(predicted_treats)
-        
-        print(predicted_treats)
-    
+
     treatments = list(set(treatments))
 
 
@@ -215,7 +212,7 @@ def calculate_results(conn):
     pset = pd.read_csv(experiment)
 
     tdf = get_treatment_data(conn, pset.hadm_id.tolist())
-
+    pset['evaltime'] = pd.to_datetime(pset['evaltime'])
     tdf['starttime'] = pd.to_datetime(tdf['starttime'])
     tdf['endtime'] = pd.to_datetime(tdf['endtime'])
     df = pd.DataFrame()
@@ -236,7 +233,7 @@ def calculate_results(conn):
         
         tdf_tmp_1 = tdf_tmp_1.append(tdf_tmp_2, ignore_index=True)
 
-        df_pat = compile_results(hadm_id,time,td, tdf_tmp_1,ver)
+        df_pat = compile_results(hadm_id,time,td, tdf_tmp_1)
         if len(df_pat) > 0:
             df = df.append(df_pat, ignore_index=True)
 
