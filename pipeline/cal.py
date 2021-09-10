@@ -11,7 +11,6 @@ path = path.split('experiments')[0] + 'common'
 sys.path.insert(1, path)
 import db_handler
 
-
 conf_interval = 0.9
 # maps proportion of values above mean
 # to number of standard deviations above mean
@@ -109,28 +108,9 @@ def compute_average_ci(sample):
 
 
 # for each patient, Compile results to output actual and predicted treatment
-def compile_results(hadm_id,time,td, tdf_tmp):
+def compile_results(hadm_id,time,td, tdf_tmp, predicted_treats):
     
-
-    rdf = pd.DataFrame()
     df_pat = pd.DataFrame(columns=['patient','treatment','t','time_diff_from_admission','h-value','actual','predicted'])
-
-    directory = 'results_treat_predict/' + str(hadm_id) + '/'
-
-    if os.path.isdir(directory):
-        for filename in os.listdir(directory):
-            if 'rf_4' in filename:
-                file_path = os.path.join(directory, filename)
-                
-                tdf = pd.read_pickle(file_path)
-            
-                rdf = rdf.append(tdf, ignore_index=True)
-
-    if len(rdf) > 0:
-        rdf = rdf[rdf.state == 0]
-        rdf = rdf[rdf.time == time]
-
-        rdf_tmp_2 = rdf[rdf.predict==1]
 
     actual_treats = []
     try:
@@ -141,14 +121,11 @@ def compile_results(hadm_id,time,td, tdf_tmp):
         pass
     treatments = copy.deepcopy(actual_treats)
 
-    predicted_treats = []
-    if len(rdf) > 0:
-        predicted_treats = rdf_tmp_2.treatment.unique().tolist()
+    if len(predicted_treats) > 0:
         predicted_treats = [int(x) for x in predicted_treats]
         treatments.extend(predicted_treats)
 
     treatments = list(set(treatments))
-
 
     if len(treatments) == 0:
         trt_dict = {
@@ -204,9 +181,7 @@ def get_treatment_data(conn, test_pats):
 
 
 # calculate metrics for predictions of testing patients
-def calculate_results(conn):
-    experiment = 'experiment_micu_testing.csv'
-    pset = pd.read_csv(experiment)
+def calculate_results(conn, pset, predictions):
 
     tdf = get_treatment_data(conn, pset.hadm_id.tolist())
     pset['evaltime'] = pd.to_datetime(pset['evaltime'])
@@ -219,7 +194,7 @@ def calculate_results(conn):
         hadm_id = getattr(row, 'hadm_id')
         time = getattr(row, 'evaltime')
         
-        time_horizon = time + pd.Timedelta(4, unit='h')
+        time_horizon = time + pd.Timedelta(2, unit='h')
 
         td = getattr(row, 'timediff')
         
@@ -231,7 +206,8 @@ def calculate_results(conn):
         
         tdf_tmp_1 = tdf_tmp_1.append(tdf_tmp_2, ignore_index=True)
 
-        df_pat = compile_results(hadm_id,time,td, tdf_tmp_1)
+
+        df_pat = compile_results(hadm_id,time,td, tdf_tmp_1, predictions[hadm_id])
         if len(df_pat) > 0:
             df = df.append(df_pat, ignore_index=True)
 
