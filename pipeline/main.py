@@ -22,7 +22,7 @@ import db_handler
 # start pipeline, by intiating connection to database
 # return connection as conn and cursor as cur
 def start():
-    print("Pipeline started for evaluation row 7 experiment of using a time horizon of 12 hours for treatment prediction.")
+    print("Pipeline started for evaluation row 8 experiment of using a time horizon of 24 hours for treatment prediction.")
     conn = db_handler.intialize_database_handler()
     cur = conn.cursor()
     return conn, cur
@@ -32,7 +32,7 @@ def start():
 # return connection and cursor
 def stop(conn, cur):
     db_handler.close_db_connection(conn, cur)
-    print("Pipeline ended for evaluation row 7 experiment of using a time horizon of 12 hours for treatment prediction.")
+    print("Pipeline ended for evaluation row 8 experiment of using a time horizon of 24 hours for treatment prediction.")
 
 
 if __name__ == "__main__":
@@ -134,7 +134,7 @@ if __name__ == "__main__":
         else:
             print('No Similar Patient found.')
 
-    print('calculating overall results (precision, recall, F1-score) for evaluation row 7 experiment of using a time horizon of 12 hours for treatment prediction.')
+    print('calculating overall results (precision, recall, F1-score) for evaluation row 8 experiment of using a time horizon of 24 hours for treatment prediction.')
     cal.calculate_results(conn)
 
     stop(conn, cur)

@@ -11,7 +11,6 @@ path = path.split('experiments')[0] + 'common'
 sys.path.insert(1, path)
 import db_handler
 
-
 conf_interval = 0.9
 # maps proportion of values above mean
 # to number of standard deviations above mean
@@ -119,7 +118,7 @@ def compile_results(hadm_id,time,td, tdf_tmp):
 
     if os.path.isdir(directory):
         for filename in os.listdir(directory):
-            if 'rf_12' in filename:
+            if 'rf_24' in filename:
                 file_path = os.path.join(directory, filename)
                 
                 tdf = pd.read_pickle(file_path)
@@ -219,7 +218,7 @@ def calculate_results(conn):
         hadm_id = getattr(row, 'hadm_id')
         time = getattr(row, 'evaltime')
         
-        time_horizon = time + pd.Timedelta(12, unit='h')
+        time_horizon = time + pd.Timedelta(24, unit='h')
 
         td = getattr(row, 'timediff')
         
