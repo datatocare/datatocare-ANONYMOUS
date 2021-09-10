@@ -70,10 +70,6 @@ def enrich_demographic_features(demo_vectors_amd_id, adm_id, demo_data_adm_id):
     val_pats = pd.read_csv('valid_admissions_wo_holdout.csv')
     val_pats = val_pats[val_pats.hadm_id == adm_id]
 
-    if len(val_pats) < 1:
-        val_pats = pd.read_csv('experiment_micu_testing.csv')
-        val_pats = val_pats[val_pats.hadm_id == adm_id]
-
     demo_vectors_amd_id['age'] = val_pats['age'].iloc[0]
     demo_vectors_amd_id['ethnicity'] = demo_data_adm_id['ethnicity']
     demo_vectors_amd_id['gender'] = demo_data_adm_id['gender']
