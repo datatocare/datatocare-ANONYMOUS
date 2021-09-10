@@ -172,7 +172,7 @@ def enrich_treatment_features(features_vector_adm_id, pat_treat_df):
             features_vector_adm_id.at[row.Index,  cols_trmts_rcncy] = 0
             features_vector_adm_id.at[row.Index,  cols_trmts_gvn_nxt] = 1
 
-        tgn = pd.to_datetime(t) + pd.DateOffset(hours=2)
+        tgn = pd.to_datetime(t) + pd.DateOffset(hours=4)
 
         othr_trmts = list(set(all_treats_pats) - set(unique_trmts))
 
