@@ -7,7 +7,6 @@ path = path.split('experiments')[0] + 'common'
 sys.path.insert(1, path)
 import db_handler
 
-
 # Read all measurements type information by itemid
 # from table d3sv1_measurement_items_type
 # type 0 means numerical, 1 means categorical 
