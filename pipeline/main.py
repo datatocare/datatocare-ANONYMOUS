@@ -22,7 +22,7 @@ import db_handler
 # start pipeline, by intiating connection to database
 # return connection as conn and cursor as cur
 def start():
-    print("Pipeline started for evaluation row 10 experiment of using instantaneous abnormals.")
+    print("Pipeline started for evaluation row 11 experiment of using Criterion-1 to find similar patient set.")
     conn = db_handler.intialize_database_handler()
     cur = conn.cursor()
     return conn, cur
@@ -32,7 +32,7 @@ def start():
 # return connection and cursor
 def stop(conn, cur):
     db_handler.close_db_connection(conn, cur)
-    print("Pipeline ended for evaluation row 10 experiment of using instantaneous abnormals.")
+    print("Pipeline ended for evaluation row 11 experiment of using Criterion-1 to find similar patient set.")
 
 
 if __name__ == "__main__":
@@ -60,9 +60,9 @@ if __name__ == "__main__":
 
         start = time.time()
 
-        similar_patients, treatments_df = find_treatments.find(conn, hadm_id, t)
+        similar_patients, treatments_df = find_treatments.find(conn, cur, hadm_id, t)
         if len(similar_patients) > 0:
-            # similar_patients = [int(x) for x in similar_patients]
+            similar_patients = [int(x) for x in similar_patients]
             print("Treatments and similar patients calculated")
 
             meas_itms_vec_num, meas_itms_vec_cat, base_vectors, demo_cols, diag_cols, meas_cols, treat_cols = build_base_vectors.build(conn, hadm_id, t, similar_patients, treatments_df)
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
             print("About to start processes for adding feature vectors (demo, diag, meas and treatment) ")
 
-            sim_adm_ids = copy.deepcopy(similar_patients.hadm_id.unique().tolist())
+            sim_adm_ids = copy.deepcopy(similar_patients)
             sim_adm_ids.append(hadm_id)
 
             build_feature_vectors.clear()
@@ -134,7 +134,7 @@ if __name__ == "__main__":
         else:
             print('No Similar Patient found.')
 
-    print('calculating overall results (precision, recall, F1-score) for evaluation row 10 experiment of using instantaneous abnormals.')
+    print('calculating overall results (precision, recall, F1-score) for evaluation row 11 experiment of using Criterion-1 to find similar patient set.')
     cal.calculate_results(conn)
 
     stop(conn, cur)

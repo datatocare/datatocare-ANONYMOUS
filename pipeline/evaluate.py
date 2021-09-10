@@ -1,8 +1,5 @@
 import pandas as pd
 import pickle
-import multiprocessing
-import copy
-import gc
 import os
 import sys
 path = os.getcwd()
@@ -37,16 +34,16 @@ def output_patient_stats(conn, df_user_meas_abnr_num, hadm_id):
  # Output similar patients as subject id, admission id as hadm_id
  # and similarity score
 def output_similar_patient(similar_patients, hadm_id):
-    print('outputting similar patients')
     direc = 'results_sim_pats/'
     with open(direc + str(hadm_id) + '_similar_patient.txt', 'w') as fp:
         for pat in similar_patients:
-            out_str = 'Hadm_id : {0}, Offset : {1}, and Score = {2}, Jaccard Distance = {3} \n'.format(
-                pat['hadm_id'], pat['offset'], pat['score'], pat['jaccard'])
+            out_str = 'Subject_id : {0}, Hadm_id : {1}, and Score = {2} \n'.format(
+                pat['subject_id'], pat['hadm_id'], pat['score'])
             fp.write(out_str)
     out_sim_pat_with_scores = str(hadm_id) + "_similar_patients.pkl"
     with open(direc + out_sim_pat_with_scores, "wb") as f:
-        pickle.dump(similar_patients, f)
+        pickle.dump(similar_patients, f)  
+
 
 # Find input user measurements from measurement table given
 # chartevents or labevents
@@ -60,8 +57,7 @@ def find_user_meas_table(connection, table, hadm_id, charttime, meas_type):
             "SELECT T2.itemid, T2.valuenum "\
             "FROM {0} AS T2 "\
             "JOIN T1 ON T2.itemid = T1.itemid AND T2.charttime = T1.latest_charttime "\
-            "WHERE hadm_id = {1} ;".format(table, hadm_id, charttime)
-        # print(table_df_query)
+            "WHERE hadm_id = {1} and charttime <= {2} and valuenum is not null;".format(table, hadm_id, charttime)
     return db_handler.make_selection_query(connection, table_df_query)
 
 
@@ -121,92 +117,13 @@ def label_abnormal_user_meas(df_user_meas, meas_type):
 # similar patients
 def build_query_similar_patients(df_user_meas_abnr, meas_type, table):
     if not meas_type:
-
-        query_similar_patients_itms = ''
-
+        query_similar_patients = 'select distinct subject_id, hadm_id, itemid from {0} where '.format(
+            table)
         for index, row in df_user_meas_abnr.iterrows():
-            qstr = '{0},'.format(
-                int(row['itemid']))
-            query_similar_patients_itms = query_similar_patients_itms + qstr
-        query_similar_patients_itms = ','.join(query_similar_patients_itms.split(',')[0:-1])
-        if query_similar_patients_itms == '':
-            return ''
-        query_similar_patients_itms = 'and itemid IN (' + query_similar_patients_itms + ')'
-        query_similar_patients_tmp = "SELECT T2.hadm_id, itemid, valuenum, charttime, EXTRACT(EPOCH FROM charttime-admittime)/3600 as states "\
-                                "FROM {0} AS T2, admissions "\
-                                "WHERE T2.hadm_id = admissions.hadm_id and valuenum is not null ".format(table)
-        query_similar_patients = query_similar_patients_tmp + query_similar_patients_itms
-        return query_similar_patients
-
-
-# find all abnormals that occur within last 8 hours of most similar state 
-def get_sim_pat_all_meas(hid,offset,source_table):
-    offset = offset + 0.0001
-    offset_low = offset - 8
-
-    table = ''
-    if source_table:
-        table = 'd3sv1_chartevents_mv'
-    else:
-        table = 'd3sv1_labevents_mv'
-    # if want to use both lab and chartevents, replace all_sim_meas with the commented all_sim_meas
-
-    # Only using type of abnormals present in evaluating patient
-    conn_sim = db_handler.intialize_database_handler()
-    all_sim_meas = "SELECT itemid, valuenum, charttime, EXTRACT(EPOCH FROM charttime-admittime)/3600 as measstate FROM {0}, admissions "\
-    "WHERE {0}.hadm_id = admissions.hadm_id and valuenum is not null "\
-    "and {0}.hadm_id = {1} and EXTRACT(EPOCH FROM charttime-admittime)/3600 <= {2} ;".format(table, hid, offset)
-
-    all_sim_meas_df = db_handler.make_selection_query(conn_sim, all_sim_meas)
-    db_handler.close_db_connection(conn_sim, conn_sim.cursor())
-
-    all_sim_meas_df = all_sim_meas_df.loc[all_sim_meas_df.groupby('itemid')['charttime'].idxmax()]
-    all_sim_meas_df = all_sim_meas_df[all_sim_meas_df.measstate >= offset_low]
-    df_num_cmpt = pd.read_pickle('numeric_computaion.pkl')
-    val_items = df_num_cmpt.itemid.unique().tolist()
-    all_sim_meas_df = all_sim_meas_df[all_sim_meas_df.itemid.isin(val_items)]
-    total_abnormals=0
-    for itm in all_sim_meas_df.itemid.unique().tolist():
-        meas = df_num_cmpt[df_num_cmpt.itemid == itm].iloc[0]
-        all_sim_meas_df_itm = all_sim_meas_df[all_sim_meas_df.itemid==itm]
-        if len(all_sim_meas_df_itm[all_sim_meas_df_itm.valuenum > meas['up']]) > 0:
-            total_abnormals = total_abnormals + 1
-        elif len(all_sim_meas_df_itm[all_sim_meas_df_itm.valuenum < meas['lp']]) > 0:
-            total_abnormals = total_abnormals + 1
-    return total_abnormals
-
-
-# For a particular patient, find the best similar state using most
-# update values at that state and also rank them using jaccard distance
-def cal_best_state_abnormals(df_sim_patients_num_tmp,h_id,total_items,similar_patients,source_table):
-
-    df_sim_patients_num_tmp = df_sim_patients_num_tmp.sort_values(by=['states'], ascending=True)
-    abnormal_states = df_sim_patients_num_tmp[df_sim_patients_num_tmp.abnormal == 1].states.unique().tolist()
-
-    count = 0
-    state = -1
-
-    for s in abnormal_states:
-
-        df_max_value_group = df_sim_patients_num_tmp[df_sim_patients_num_tmp.states <= s]
-        df_max_value_group = df_max_value_group.loc[df_max_value_group.groupby('itemid')['charttime'].idxmax()]
-        df_max_value_group = df_max_value_group[df_max_value_group.abnormal == 1]
-        abrsc = len(df_max_value_group)
-        if abrsc > count:
-            count = abrsc
-            state = s
-
-    score = (count / total_items) * 100
-    if score >= 50:
-        total_abnormals = get_sim_pat_all_meas(h_id,state,source_table)
-        tmp_dict = {
-                'offset': state,
-                'hadm_id': h_id,
-                'score': score,
-                'jaccard': ((count / total_items) / max(1,total_abnormals)) * 100
-                }
-
-        similar_patients.append(tmp_dict)
+            qstr = ' (itemid = {0} and valuenum {1} {2}) or'.format(
+                int(row['itemid']), row['symbol'], round(row['pb'], 2))
+            query_similar_patients = query_similar_patients + qstr
+        return ' or'.join(query_similar_patients.split(' or')[0:-1])
 
 
 # Find similar patients by first building queries separately for dealing with
@@ -223,105 +140,51 @@ def find_similar_patients(
     df_sim_patients_num = pd.DataFrame()
 
     if len(df_user_meas_abnr_num) > 0:
-
         bq_smp_num_chart = build_query_similar_patients(
                 df_user_meas_abnr_num[df_user_meas_abnr_num.itemid>220000], 0, tables[0])
-
-
         bq_smp_num_lab = build_query_similar_patients(
                 df_user_meas_abnr_num[df_user_meas_abnr_num.itemid<220000], 0, tables[1])
 
-        tmpn_df_lab = pd.DataFrame()
-        tmpn_df_chart = pd.DataFrame()
+        bnempty = '' in [bq_smp_num_chart,bq_smp_num_lab]
 
-        if bq_smp_num_lab:
-            tmpn_df_lab = db_handler.make_selection_query(connection, bq_smp_num_lab)
-        if bq_smp_num_chart:
-            tmpn_df_chart = db_handler.make_selection_query(connection, bq_smp_num_chart)        
+        if not bnempty:
+            bq_smp_num = bq_smp_num_chart + '\nUNION\n' + bq_smp_num_lab
+        elif bq_smp_num_chart:
+            bq_smp_num = bq_smp_num_chart
+        elif bq_smp_num_lab:
+            bq_smp_num = bq_smp_num_lab
 
-        df_sim_patients_num = tmpn_df_chart.append(
-            tmpn_df_lab, ignore_index=True)
-
+        if bq_smp_num:
+            #print(bq_smp_num)
+            tmpn_df = db_handler.make_selection_query(connection, bq_smp_num)
+            df_sim_patients_num = df_sim_patients_num.append(
+            tmpn_df, ignore_index=True)
+        
         total_items = 0
         similar_patients = []
-        charitems = 0
-        source_table = 0 # 1 means chartevent, 0 means labevents
+        
         if not df_user_meas_abnr_num.empty:
             total_items = total_items + len(df_user_meas_abnr_num.itemid.unique())
-            if not tmpn_df_chart.empty:
-                charitems = len(tmpn_df_chart.itemid.unique())
-                source_table = 1
-
+        
         if not df_sim_patients_num.empty:
+            df_similar_patients_score = df_sim_patients_num.groupby(
+            ['subject_id', 'hadm_id']).size().reset_index().rename(columns={0: 'count'})
 
-            lower_limit = int(total_items*0.50)
-
-            df_sim_patients_num.reset_index(inplace=True)
-            df_sim_patients_num['abnormal'] = 0
-
-            for index, row in df_user_meas_abnr_num.iterrows():
-                itemid = int(row['itemid'])
-                val = row['pb']
-                if row['symbol'] == '<':
-                    df_sim_patients_num.loc[df_sim_patients_num.index[(df_sim_patients_num['itemid'] == itemid) & (df_sim_patients_num['valuenum'] < val)], 'abnormal'] = 1
-                elif row['symbol'] == '>':
-                    df_sim_patients_num.loc[df_sim_patients_num.index[(df_sim_patients_num['itemid'] == itemid) & (df_sim_patients_num['valuenum'] > val)], 'abnormal'] = 1
-
-            df_sim_patients_num_abr = df_sim_patients_num[df_sim_patients_num.abnormal == 1]
-            
-            df_similar_patients_score_filtr = df_sim_patients_num_abr.groupby(
-            ['hadm_id'])['itemid'].nunique().reset_index().rename(columns={'itemid': 'counts'})
-            df_similar_patients_score_filtr = df_similar_patients_score_filtr[df_similar_patients_score_filtr.counts >= lower_limit]
-
-            df_sim_patients_num = df_sim_patients_num[df_sim_patients_num.hadm_id.isin(df_similar_patients_score_filtr.hadm_id.tolist())]
-
-            manager = multiprocessing.Manager()
-            similar_patients = manager.list()
-
-            val_pats = pd.read_csv('valid_admissions_wo_holdout.csv')
-            valid_hadmids = val_pats.hadm_id.tolist()
-            df_sim_patients_num = df_sim_patients_num[df_sim_patients_num['hadm_id'].isin(valid_hadmids)]
-
-            if charitems > 0:
-                df_sim_patients_num = df_sim_patients_num[df_sim_patients_num.itemid >= 220000]
-
-                total_items = charitems
-
-                    
-            sim_ids = df_sim_patients_num.hadm_id.unique().tolist()
-            sim_ids.remove(hadm_id)
-            
-            chunks = [sim_ids[x:x+250] for x in range(0, len(sim_ids), 250)]
-
-            grouped = df_sim_patients_num.groupby(df_sim_patients_num.hadm_id)
-
-            for adm_chunk in chunks:
-                jobs = []
-                for h_id in adm_chunk:
-                    p = multiprocessing.Process(target=cal_best_state_abnormals, args=(grouped.get_group(h_id),h_id,total_items,similar_patients,source_table,))
-                    p.start()
-                    jobs.append(p)
-
-                for proc in jobs:
-                    proc.join()
-                    proc.close()
-                    gc.collect()
-                    
-                print('similar patient finding sub-processes chunk processed')
-            
-            gc.collect()
-            
-            if len(similar_patients) > 0:
-
-                output_similar_patient(copy.deepcopy(similar_patients), hadm_id)
-                del similar_patients
-            else:
-                output_similar_patient([], hadm_id)
-        else:
-            output_similar_patient([], hadm_id)
+            for index, row in df_similar_patients_score.iterrows():
+                score = (int(row['count']) / total_items) * 100
+                if score >= sim_per:
+                    if hadm_id != int(row['hadm_id']):
+                        s_id = str(int(row['subject_id']))
+                        h_id = str(int(row['hadm_id']))
+                        similar_patients_dict = {
+                                'subject_id': s_id,
+                                'hadm_id': h_id,
+                                'score': score
+                                }
+                        similar_patients.append(similar_patients_dict)
+        output_similar_patient(similar_patients, hadm_id)
     else:
         output_similar_patient([], hadm_id)
-
 
 # Call functions that evaluate given patient state and and determine close patients.
 def evaluate(conn, hadm_id = 0, t = ''):

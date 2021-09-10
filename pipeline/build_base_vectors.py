@@ -65,9 +65,8 @@ def intialize_base_vectors(times_df, meas_itms_vec_num, meas_itms_vec_cat, treat
 # Get items which will be used as measuremnts vector
 # Return numrical and categorical measures seperately
 def get_meas_items_features(conn, hadm_id, t, similar_patients):
-
     tmp_pats_query = '('
-    for pat in similar_patients['hadm_id'].unique().tolist():
+    for pat in similar_patients:
         tmp_pats_query = tmp_pats_query + str(pat) + ', '
     tmp_pats_query = ", ".join(tmp_pats_query.split(", ")[0:-1])
     tmp_pats_query = tmp_pats_query + ')'
@@ -86,7 +85,7 @@ def get_meas_items_features(conn, hadm_id, t, similar_patients):
         "WHERE valuenum IS NOT null and hadm_id IN " + tmp_pats_query + " INTERSECT "\
         "SELECT DISTINCT itemid FROM d3sv1_labevents_mv "\
         "WHERE valuenum IS NOT null and hadm_id = {0} and charttime <= \'{1}\'; ".format(hadm_id, t)
-
+    
     meas_itms_vec_cat_lab_query = "SELECT DISTINCT itemid FROM d3sv1_labevents_mv "\
         "WHERE valuenum IS null and hadm_id IN " + tmp_pats_query + " INTERSECT "\
         "SELECT DISTINCT itemid FROM d3sv1_labevents_mv "\
@@ -107,26 +106,21 @@ def get_meas_items_features(conn, hadm_id, t, similar_patients):
 # Get all times for patients at which diagnosis or measurement was taken
 # Return times for patients as a dataframe
 def get_all_times(conn, hadm_id, t, similar_patients):
-    
-    all_time_df = pd.DataFrame()
-    for index, row in similar_patients.iterrows():
-        h_id = int(row['hadm_id'])
-        offset = float(row['offset']) + 0.0001
 
-        #here integrate pruning all times where they are outside of window
-        time_query = "with cte as ( "\
-        "SELECT hadm_id,charttime AS time FROM d3sv1_chartevents_mv "\
-        "WHERE hadm_id = {0} UNION "\
+    tmp_pats_query = '('
+    for pat in similar_patients:
+        tmp_pats_query = tmp_pats_query + str(pat) + ', '
+    tmp_pats_query = ", ".join(tmp_pats_query.split(", ")[0:-1])
+
+    tmp_pats_query = tmp_pats_query + ')'
+    all_time_query = "SELECT hadm_id,charttime AS time FROM d3sv1_chartevents_mv "\
+        "WHERE hadm_id IN " + tmp_pats_query + " UNION "\
         "SELECT hadm_id,timestamp AS time FROM d3sv1_patient_diagnosis_time "\
-        "WHERE hadm_id = {0} UNION "\
+        "WHERE hadm_id IN " + tmp_pats_query + " UNION "\
         "SELECT hadm_id,charttime AS time FROM d3sv1_labevents_mv "\
-        "WHERE hadm_id = {0} ) "\
-        "SELECT cte.hadm_id, cte.time  FROM cte, admissions WHERE "\
-        "cte.hadm_id = admissions.hadm_id and EXTRACT(EPOCH FROM time-admittime)/3600 <= {1};"
-        time_query = time_query.format(h_id,offset)
-        
-        all_time_df = all_time_df.append(db_handler.make_selection_query(conn, time_query), ignore_index=True)
+        "WHERE hadm_id IN " + tmp_pats_query + ";"
 
+    all_time_df = db_handler.make_selection_query(conn, all_time_query)
     t = pd.to_datetime(t)
     time_dict_pat_tmp = {
         'hadm_id': hadm_id,
