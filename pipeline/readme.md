@@ -1,47 +1,47 @@
-## Experiment Explanation
+## Experiments Explanation
 In this folder, you will find sub-folders that contains code to run a different flavor of pipeline corresponding to evaluation and testing experiments mentioned in table 2 and 3 of the paper.  
 
-Here is a brief description of each experiment, more detailed explanation could be found in the paper:  
+Here is a brief description of each experiment, detailed explanation could be found in the paper:  
 1. * **evaluation_experiment_encoding_variant_raw_row_1_table_2** :  
-In this evaluation experiment, we evaluate the effect (prediction performance) of using raw encoding variant of feature vectors in the pipeline.  
+In this evaluation experiment, we evaluate the effect (prediction performance of pipeline) of using a raw encoding variant of feature vectors.  
 2. * **evaluation_experiment_encoding_variant_abnormality-hot encoding_row_2_table_2** :  
-In this evaluation experiment, we evaluate the effect of using normality-hot encoding variant of feature vectors.    
+In this evaluation experiment, we evaluate the effect of using an abnormality-hot encoding variant of feature vectors.    
 3. * **evaluation_experiment_encoding_variant_dimensionality reduction_row_3_table_2** :  
-In this evaluation experiment, we evaluate the effect of using dimensionally reduced variant of feature vectors.  
+In this evaluation experiment, we evaluate the effect of using a dimensionally reduced variant of feature vectors.  
 4. * **evaluation_experiment_time_horizon_2-hours_row_4_table_2** :  
-In this evaluation experiment, we evaluate the effect of using time horizon of 2 hours as treatment recommendation horizon. . 
+In this evaluation experiment, we evaluate the effect of using a time horizon of 2 hours as a treatment recommendation horizon.  . 
 5. * **evaluation_experiment_time_horizon_4-hours_row_5_table_2** :  
-In this evaluation experiment, we evaluate the effect of using time horizon of 4 hours as treatment recommendation horizon.  
+In this evaluation experiment, we evaluate the effect of using a time horizon of 4 hours as a treatment recommendation horizon.   
 6. * **evaluation_experiment_time_horizon_8-hours_row_6_table_2** :  
-In this evaluation experiment, we evaluate the effect of using time horizon of 8 hours as treatment recommendation horizon. 
+In this evaluation experiment, we evaluate the effect of using a time horizon of 8 hours as a treatment recommendation horizon.  
 7. * **evaluation_experiment_time_horizon_12-hours_row_7_table_2** :  
-In this evaluation experiment, we evaluate the effect of using time horizon of 12 hours as treatment recommendation horizon.  
+In this evaluation experiment, we evaluate the effect of using a time horizon of 12 hours as a treatment recommendation horizon.  
 8. * **evaluation_experiment_time_horizon_24-hours_row_8_table_2** :  
-In this evaluation experiment, we evaluate the effect of using time horizon of 24 hours as treatment recommendation horizon.  
+In this evaluation experiment, we evaluate the effect of using a time horizon of 24 hours as a treatment recommendation horizon.  
 9. * **evaluation_experiment_abnormals_accumulated_row_9_table_2** :  
 In this evaluation experiment, we evaluate the effect of using accumulated abnormals for finding similar patients.  
 10. * **evaluation_experiment_abnormals_instantaneous_row_10_table_2** :  
 In this evaluation experiment, we evaluate the effect of using instantaneous abnormals for finding similar patients.  
 11. * **evaluation_experiment_similar_patient_set_size_criterion-1_row_11_table_2** :  
-In this evaluation experiment, we evaluate the effect of using similarity criterion-1 for selection of similar set.
+In this evaluation experiment, we evaluate the effect of using similarity criterion-1 for the selection of a similar patient set.  
 12. * **evaluation_experiment_similar_patient_set_size_criterion-2_row_12_table_2** :  
-In this evaluation experiment, we evaluate the effect of using similarity criterion-2 for selection of similar set.
+In this evaluation experiment, we evaluate the effect of using similarity criterion-2 for the selection of a similar patient set.  
 13. * **evaluation_experiment_similar_patient_set_size_criterion-3_row_13_table_2** :  
-In this evaluation experiment, we evaluate the effect of using similarity criterion-3 for selection of similar set.
+In this evaluation experiment, we evaluate the effect of using similarity criterion-3 for the selection of a similar patient set.  
 14. * **evaluation_experiment_similar_patient_set_size_criterion-4_row_14_table_2** :  
-In this evaluation experiment, we evaluate the effect of using similarity criterion-2 for selection of similar set.
+In this evaluation experiment, we evaluate the effect of using similarity criterion-4 for the selection of a similar patient set.  
 15. * **testing_experiment_null hypothesis_2-hours_row_1_table_3** :  
-In this testing experiment, we test null hyposesis to make treatment prediction for the next 2 hours.
+In this testing experiment, we test the null hypothesis to make treatment predictions for the next 2 hours.  
 16. * **testing_experiment_datatocare_2-hours_row_2_table_3** :  
-In this testing experiment, we test DataToCare to make treatment prediction for the next 2 hours.
+In this testing experiment, we test the DataToCare pipeline to make treatment predictions for the next 2 hours.  
 17. * **testing_experiment_null hypothesis_4-hours_row_3_table_3** :  
-In this testing experiment, we test null hyposesis to make treatment prediction for the next 4 hours.
+In this testing experiment, we test the null hypothesis to make treatment predictions for the next 4 hours.  
 18. * **testing_experiment_datatocare_4-hours_row_4_table_3** :  
-In this testing experiment, we test DataToCare  to make treatment prediction for the next 4 hours.
+In this testing experiment, we test the DataToCare pipeline to make treatment predictions for the next 4 hours.  
 
-In each of the experiment subfolders, you will find scripts and text files that will first make features vector and then using that to make training data which will eventually be used to make models for predicting treatments to be given to input patients (500 testing and 300 evaluation patients).
+In each of the experiment subfolders, you will find scripts and csv files that will first make features vector and then using that to make training data which will eventually be used to make models for predicting treatments to be given to input patients (500 testing and 300 evaluation patients).
 
-File listed in the experiment sub-folders are scripts: main.py, compute.py, evaluate.py, find_treatments.py, build_state_vectors.py, build_feature_vectors, build_models_predictions.py, helper.py, and csv files: experiment_micu_eval.csv or experiment_micu_testing.csv and valid_admissions_wo_holdout.csv.
+Files listed in the experiment sub-folders are scripts: main.py, compute.py, evaluate.py, find_treatments.py, build_state_vectors.py, build_feature_vectors, build_models_predictions.py, helper.py, and csv files: experiment_micu_eval.csv or experiment_micu_testing.csv and valid_admissions_wo_holdout.csv.  
 
 Here is the description of each:
 
