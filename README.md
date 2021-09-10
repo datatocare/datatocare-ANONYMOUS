@@ -28,8 +28,8 @@ To setup:
 2) run script **./setup/main.py**
 
 ### Experiments
-Prediction Pipeline
-In the experiments folder, you will find different versions of the DataToCare pipeline corresponding to 14 rows of table 2 (evaluation experiments) and 4 rows of table 3 (testing experiments). A brief description of each of the experiments is provided in the readme of the experiments folder along with the information describing each essential subprocess with relevant code scripts used by different pipeline versions.  
-Code that will process patient and execute the particular flavor of the pipeline can be found in ./experiments/experiment_name/.   
+In the experiments folder, you will find different versions of the DataToCare pipeline corresponding to 14 rows of table 2 (evaluation experiments) and 4 rows of table 3 (testing experiments) of the paper.  
+A brief description of each of the experiments is provided, in the readme of the experiments folder, along with the information describing the essential subprocess with relevant code scripts used by pipeline versions.  
+Code that will process patient and execute the particular flavor of the pipeline can be found in ./experiments/experiment_name/.  
 To execute it on evaluation/testing patients, run script **./experiments/experiment_name/main.py**  
 The experiment name also contains the row number and table number with the keywords describing the experiment.
