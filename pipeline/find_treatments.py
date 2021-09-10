@@ -10,6 +10,7 @@ sys.path.insert(1, path)
 import db_handler
 
 
+
 # read similar patients hadm_ids from pickel created by evaluate script
 def read_similar_patients(hadm_id):
 

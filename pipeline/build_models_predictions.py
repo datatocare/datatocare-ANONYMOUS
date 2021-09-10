@@ -21,6 +21,7 @@ path = path.split('experiments')[0] + 'common'
 sys.path.insert(1, path)
 import db_handler
 
+
 # Compile results to output actual and predicted treatment
 def cal_potential_results(hadm_id):
 	rdf = pd.DataFrame()
@@ -187,10 +188,73 @@ def build_training_testing_dataframes(hadm_id,training_meas_diag_demo, training_
 		if len(label_meas_diag_demo[col].unique()) == 1:
 			label_meas_diag_demo.drop(col,inplace=True,axis=1)
 
+	print('Reducing data')
+
+	diag_cols = [x for x in label_meas_diag_demo.columns if 'diagnosis_group' in x]
+
+	#reducing cat cols
+	non_cat_cols = ['time', 'hadm_id', 'index', 'age', 'time_diff']
+	non_cat_cols.extend(num_cols)
+	non_cat_cols.extend(diag_cols)
+	non_cat_cols.extend(num_null_cols)
+	cat_cols = label_meas_diag_demo.columns.difference(non_cat_cols)
+
+	dimensions = 5
+	if len(cat_cols) < 100:
+		dimensions = 2
+	if len(cat_cols) > 900:
+		dimensions = 9
+	new_cat_cols = []
+	if len(cat_cols) > 0:
+		print('reducing categorical features from ' + str(len(cat_cols)) + ' dimesions to ' + str(dimensions))
+		umap_data = umap.UMAP(init='random',n_neighbors=15, min_dist=0.2, n_components=dimensions, n_epochs=200).fit_transform(label_meas_diag_demo[cat_cols].values)
+
+		label_meas_diag_demo.drop(cat_cols, inplace=True,axis=1)
+		
+		for i in range(0,dimensions):
+			new_cat_cols.append('umap_dim_cat_' + str(i))
+			label_meas_diag_demo['umap_dim_cat_' + str(i)] = umap_data[:,i]
+
+	#reducing diagnosis columns 
+	new_diag_cols = []
+	dimensions = 2
+	if len(diag_cols) > 0:
+		print('reducing diagnosis features from ' + str(len(diag_cols)) +  ' to 2')
+
+		umap_data = umap.UMAP(init='random',n_neighbors=15, min_dist=0.2, n_components=dimensions, n_epochs=200).fit_transform(label_meas_diag_demo[diag_cols].values)
+		
+		label_meas_diag_demo.drop(diag_cols, inplace=True,axis=1)
+		
+		for i in range(0,dimensions):
+			new_diag_cols.append('umap_dim_diag_' + str(i))
+			label_meas_diag_demo['umap_dim_diag_' + str(i)] = umap_data[:,i]
+
+	#reducing numerical columns 
+	non_num_cols = ['time', 'hadm_id', 'index', 'age', 'time_diff']
+	non_num_cols.extend(new_cat_cols)
+	non_num_cols.extend(new_diag_cols)
+	all_num_cols = label_meas_diag_demo.columns.difference(non_num_cols)
+
+	dimensions = 5
+	if len(all_num_cols) < 100:
+		dimensions = 2
+	if len(all_num_cols) > 900:
+		dimensions = 9
+
+	if len(all_num_cols) > 0:
+		print('reducing numerical features from ' + str(len(all_num_cols)) + ' dimesions to ' + str(dimensions))
+	
+		umap_data = umap.UMAP(init='random',n_neighbors=15, min_dist=0.2, n_components=dimensions, n_epochs=200).fit_transform(label_meas_diag_demo[all_num_cols].values)
+		
+		label_meas_diag_demo.drop(all_num_cols, inplace=True,axis=1)
+
+		for i in range(0,dimensions):
+			label_meas_diag_demo['umap_dim_num_' + str(i)] = umap_data[:,i]
+
 	training_meas_diag_demo = label_meas_diag_demo[label_meas_diag_demo.hadm_id != hadm_id]
 	testing_meas_diag_demo = label_meas_diag_demo[label_meas_diag_demo.hadm_id == hadm_id]
 
-	print('seperating evaluating state data')
+	print('seperating testing evaluating state data')
 
 	cols_mddt = testing_meas_diag_demo.columns.difference(['time', 'hadm_id', 'index'])
 	cols_tt = testing_treat.columns.difference(['hadm_id', 'index'])

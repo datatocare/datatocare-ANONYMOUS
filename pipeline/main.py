@@ -19,10 +19,11 @@ sys.path.insert(1, path)
 import db_handler
 
 
+
 # start pipeline, by intiating connection to database
 # return connection as conn and cursor as cur
 def start():
-    print("Pipeline started for evaluation row 2 experiment of using abnormality-hot encoding variant.")
+    print("Pipeline started for evaluation row 9 experiment of using accumulated abnormals.")
     conn = db_handler.intialize_database_handler()
     cur = conn.cursor()
     return conn, cur
@@ -32,7 +33,7 @@ def start():
 # return connection and cursor
 def stop(conn, cur):
     db_handler.close_db_connection(conn, cur)
-    print("Pipeline ended for evaluation row 2 experiment of using abnormality-hot encoding variant.")
+    print("Pipeline ended for evaluation row 9 experiment of using accumulated abnormals.")
 
 
 if __name__ == "__main__":
@@ -48,7 +49,7 @@ if __name__ == "__main__":
     pats_set = pd.read_csv(experiment)
 
     print('Started pipeline to process each Patient')
-
+    
     for row in pats_set.itertuples():
 
         hadm_id = getattr(row, 'hadm_id')
@@ -134,7 +135,7 @@ if __name__ == "__main__":
         else:
             print('No Similar Patient found.')
 
-    print('calculating overall results (precision, recall, F1-score) for evaluation row 2 experiment of using abnormality-hot encoding variant.')
+    print('calculating overall results (precision, recall, F1-score) for evaluation row 9 experiment of using accumulated abnormals.')
     cal.calculate_results(conn)
 
     stop(conn, cur)

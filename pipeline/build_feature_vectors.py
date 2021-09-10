@@ -12,6 +12,7 @@ sys.path.insert(1, path)
 import db_handler
 
 
+
 #global variables to be used instead of filing
 demo_vector_data = []
 diag_vector_data = []

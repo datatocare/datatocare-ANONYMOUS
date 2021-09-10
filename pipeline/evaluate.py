@@ -9,6 +9,7 @@ sys.path.insert(1, path)
 import db_handler
 
 
+
 # Get label and itemid from d_items, d_labitems
 def get_label_itemid(conn, table):
     df_query = "Select itemid, label from {0}".format(table)

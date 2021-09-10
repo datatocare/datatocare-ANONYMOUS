@@ -10,6 +10,8 @@ path = path.split('experiments')[0] + 'common'
 sys.path.insert(1, path)
 import db_handler
 
+
+
 # Create and intialize features and treatment vectors columns
 def intialize_base_vectors(times_df, meas_itms_vec_num, meas_itms_vec_cat, treatments):
 

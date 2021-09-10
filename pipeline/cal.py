@@ -11,6 +11,7 @@ path = path.split('experiments')[0] + 'common'
 sys.path.insert(1, path)
 import db_handler
 
+
 conf_interval = 0.9
 # maps proportion of values above mean
 # to number of standard deviations above mean
