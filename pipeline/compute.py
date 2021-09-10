@@ -1,9 +1,12 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import sem, t
+import os
 import sys
+path = os.getcwd()
+path = path.split('experiments')[0] + 'common'
 # setting path for importing scripts
-sys.path.insert(1, '../common')
+sys.path.insert(1, path)
 import db_handler
 
 

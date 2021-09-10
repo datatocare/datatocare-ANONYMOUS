@@ -8,15 +8,17 @@ from sklearn.ensemble import RandomForestClassifier
 import umap.umap_ as umap
 import numpy as np
 import copy
-import os
 import psutil
 import gc
-import sys
 import helper
 import time
 import lzma
-# setting path for importing scripts in external folder
-sys.path.insert(1, '../common')
+import os
+import sys
+path = os.getcwd()
+path = path.split('experiments')[0] + 'common'
+# setting path for importing scripts
+sys.path.insert(1, path)
 import db_handler
 
 
@@ -115,144 +117,7 @@ def build_attributes_label(ddmtr_df,ttr_df,ddmtte_df,cols_mddt,treat):
 #Make training and testing data,transform categorical vectors to numerical vectors and dimensionally reduced them
 def build_training_testing_dataframes(hadm_id,training_meas_diag_demo, training_treat, testing_meas_diag_demo, testing_treat):
 
-	print('labelling data')
-
-	# get abnormal percentiles for each measurement
-	df_num_cmpt = pd.read_pickle('numeric_computaion.pkl')
-
-	num_meas = helper.get_meas_list(0)
-	num_meas = ['meas_' + str(meas) for meas in num_meas]
-
-	cat_meas = helper.get_meas_list(1)
-	cat_meas = ['meas_' + str(meas) for meas in cat_meas]
-
-	label_meas_diag_demo = training_meas_diag_demo.append(testing_meas_diag_demo, ignore_index=True)
-	label_meas_diag_demo.reset_index(inplace=True)
-
-	num_cols = label_meas_diag_demo.columns[label_meas_diag_demo.columns.isin(num_meas)]
-	cat_cols = label_meas_diag_demo.columns[label_meas_diag_demo.columns.isin(cat_meas)]
-
-	# custom label encoding of numerical measurements
-	# 0 means value of numerical measurement is normal
-	# 1 means values of numerical measurement is abnormal of type high
-	# -1 means values of numerical measurement is abnormal of type low
-	# Null values in measurement is encoded as 0 in measurement column, 
-	# and one-hot encoded in a seperate column
-	num_null_cols = []
-	for col in num_cols:
-
-		vals_dict = {}
-		vals = []
-		if label_meas_diag_demo[col].isnull().any():
-			label_meas_diag_demo[col + '_null'] = 0
-			num_null_cols.append(col + '_null')
-
-			index = label_meas_diag_demo[col].index[label_meas_diag_demo[col].apply(pd.isnull)]
-			
-			label_meas_diag_demo.at[index,  col + '_null'] = 1
-
-			vals_dict[np.nan] = 0
-
-			vals = label_meas_diag_demo[col].dropna().unique().tolist()
-		else:
-			vals = label_meas_diag_demo[col].unique().tolist()
-
-		meas_bounds = df_num_cmpt[df_num_cmpt.itemid == int(col.split('_')[-1])].iloc[0]
-
-		for val in vals:
-			if (val <= meas_bounds['up']) and (val >= meas_bounds['lp']):
-				vals_dict[val] = 0
-			elif (val > meas_bounds['up']):
-				vals_dict[val] = 1               
-			elif (val < meas_bounds['lp']):
-				vals_dict[val] = -1
-
-		label_meas_diag_demo[col].replace(vals_dict, inplace=True)
-
-	print("Total numerical measurements: " + str(len(num_cols)))
-	print("Total numerical measurements with null values: " + str(len(num_null_cols)))
-
-	#label encoding demographics columns
-	demo_cols = ['gender','ethnicity','insurance','icu_type']
-	cat_demo_cols = copy.deepcopy(cat_cols.tolist())
-	cat_demo_cols.extend(demo_cols)
-
-	print('One-hot encoding Categorical data')
-	#hot encoding categorical measurements and demographics
-	label_meas_diag_demo = pd.get_dummies(data=label_meas_diag_demo, columns=cat_demo_cols, dummy_na = True)
-
-	#remove columns that are constant so doesn't add any information
-	for col in label_meas_diag_demo.columns:
-		if len(label_meas_diag_demo[col].unique()) == 1:
-			label_meas_diag_demo.drop(col,inplace=True,axis=1)
-
-	print('Reducing data')
-
-	diag_cols = [x for x in label_meas_diag_demo.columns if 'diagnosis_group' in x]
-
-	#reducing cat cols
-	non_cat_cols = ['time', 'hadm_id', 'index', 'age', 'time_diff']
-	non_cat_cols.extend(num_cols)
-	non_cat_cols.extend(diag_cols)
-	non_cat_cols.extend(num_null_cols)
-	cat_cols = label_meas_diag_demo.columns.difference(non_cat_cols)
-
-	dimensions = 5
-	if len(cat_cols) < 100:
-		dimensions = 2
-	if len(cat_cols) > 900:
-		dimensions = 9
-	new_cat_cols = []
-	if len(cat_cols) > 0:
-		print('reducing categorical features from ' + str(len(cat_cols)) + ' dimesions to ' + str(dimensions))
-		umap_data = umap.UMAP(init='random',n_neighbors=15, min_dist=0.2, n_components=dimensions, n_epochs=200).fit_transform(label_meas_diag_demo[cat_cols].values)
-
-		label_meas_diag_demo.drop(cat_cols, inplace=True,axis=1)
-		
-		for i in range(0,dimensions):
-			new_cat_cols.append('umap_dim_cat_' + str(i))
-			label_meas_diag_demo['umap_dim_cat_' + str(i)] = umap_data[:,i]
-
-	#reducing diagnosis columns 
-	new_diag_cols = []
-	dimensions = 2
-	if len(diag_cols) > 0:
-		print('reducing diagnosis features from ' + str(len(diag_cols)) +  ' to 2')
-
-		umap_data = umap.UMAP(init='random',n_neighbors=15, min_dist=0.2, n_components=dimensions, n_epochs=200).fit_transform(label_meas_diag_demo[diag_cols].values)
-		
-		label_meas_diag_demo.drop(diag_cols, inplace=True,axis=1)
-		
-		for i in range(0,dimensions):
-			new_diag_cols.append('umap_dim_diag_' + str(i))
-			label_meas_diag_demo['umap_dim_diag_' + str(i)] = umap_data[:,i]
-
-	#reducing numerical columns 
-	non_num_cols = ['time', 'hadm_id', 'index', 'age', 'time_diff']
-	non_num_cols.extend(new_cat_cols)
-	non_num_cols.extend(new_diag_cols)
-	all_num_cols = label_meas_diag_demo.columns.difference(non_num_cols)
-
-	dimensions = 5
-	if len(all_num_cols) < 100:
-		dimensions = 2
-	if len(all_num_cols) > 900:
-		dimensions = 9
-
-	if len(all_num_cols) > 0:
-		print('reducing numerical features from ' + str(len(all_num_cols)) + ' dimesions to ' + str(dimensions))
-	
-		umap_data = umap.UMAP(init='random',n_neighbors=15, min_dist=0.2, n_components=dimensions, n_epochs=200).fit_transform(label_meas_diag_demo[all_num_cols].values)
-		
-		label_meas_diag_demo.drop(all_num_cols, inplace=True,axis=1)
-
-		for i in range(0,dimensions):
-			label_meas_diag_demo['umap_dim_num_' + str(i)] = umap_data[:,i]
-
-	training_meas_diag_demo = label_meas_diag_demo[label_meas_diag_demo.hadm_id != hadm_id]
-	testing_meas_diag_demo = label_meas_diag_demo[label_meas_diag_demo.hadm_id == hadm_id]
-
-	print('seperating testing evaluating state data')
+	print('seperating evaluating state data')
 
 	cols_mddt = testing_meas_diag_demo.columns.difference(['time', 'hadm_id', 'index'])
 	cols_tt = testing_treat.columns.difference(['hadm_id', 'index'])
@@ -263,7 +128,7 @@ def build_training_testing_dataframes(hadm_id,training_meas_diag_demo, training_
 	testing_data = pd.DataFrame(columns=cols_t)
 	times = testing_meas_diag_demo['time']
 
-	del testing_meas_diag_demo['index']
+	# del testing_meas_diag_demo['index']
 
 	si = 0
 	for t in times:
@@ -294,7 +159,6 @@ def build(hadm_id,training_meas_diag_demo, training_treat, testing_meas_diag_dem
 
 	times = ddmtte_df['time']
 	states = ddmtte_df['state']
-	del ddmtr_df['index']
 	
 	treatments = []
 

@@ -1,12 +1,13 @@
-import sys
 import pickle
-import os
 import pandas as pd
-# setting path for importing scripts in external folder
-sys.path.insert(1, '../common')
-sys.path.insert(2, '../task_1')
-import db_handler
 import evaluate
+import os
+import sys
+path = os.getcwd()
+path = path.split('experiments')[0] + 'common'
+# setting path for importing scripts
+sys.path.insert(1, path)
+import db_handler
 
 
 # read similar patients hadm_ids from pickel created by evaluate script
@@ -34,8 +35,8 @@ def read_similar_patients(hadm_id):
     similar_patients_df = similar_patients_df[similar_patients_df['hadm_id'].isin(valid_hadmids)]
 
     similar_patients_df_tmp = similar_patients_df[similar_patients_df.score >= 70]
-    if len(similar_patients_df_tmp) < 100:
-        similar_patients_df_tmp = similar_patients_df.head(100)
+    if len(similar_patients_df_tmp) < 50:
+        similar_patients_df_tmp = similar_patients_df.head(50)
     else:
         similar_patients_df_tmp = similar_patients_df_tmp.head(200)
 

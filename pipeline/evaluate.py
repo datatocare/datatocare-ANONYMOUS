@@ -1,9 +1,11 @@
 import pandas as pd
-import sys
 import pickle
 import os
+import sys
+path = os.getcwd()
+path = path.split('experiments')[0] + 'common'
 # setting path for importing scripts
-sys.path.insert(1, '../common')
+sys.path.insert(1, path)
 import db_handler
 
 

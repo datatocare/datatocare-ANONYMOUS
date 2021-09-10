@@ -4,23 +4,25 @@ import build_base_vectors
 import build_models_predictions
 import compute
 import cal
-import sys
 import time
 import multiprocessing 
 import copy
 import pickle
 import pandas as pd
-import os
 import gc
+import os
+import sys
+path = os.getcwd()
+path = path.split('experiments')[0] + 'common'
 # setting path for importing scripts
-sys.path.insert(1, '../common')
+sys.path.insert(1, path)
 import db_handler
 
 
 # start pipeline, by intiating connection to database
 # return connection as conn and cursor as cur
 def start():
-    print("Pipeline started.")
+    print("Pipeline started for evaluation row 1 experiment of using raw encoding variant.")
     conn = db_handler.intialize_database_handler()
     cur = conn.cursor()
     return conn, cur
@@ -30,7 +32,7 @@ def start():
 # return connection and cursor
 def stop(conn, cur):
     db_handler.close_db_connection(conn, cur)
-    print("Pipeline ended.")
+    print("Pipeline ended for evaluation row 1 experiment of using raw encoding variant.")
 
 
 if __name__ == "__main__":
@@ -40,11 +42,12 @@ if __name__ == "__main__":
     #compute abnormal ranges
     compute.compute(conn)
 
-    # read testing patients and run the pipeline for each 500 patients
-    experiment = 'experiment_micu_testing.csv'
+    # read patients and run the pipeline for each 300 patients
+    experiment = 'experiment_micu_eval.csv'
 
     pats_set = pd.read_csv(experiment)
-    print('Started pipeline to process each testing Patient')
+
+    print('Started pipeline to process each Patient')
 
     for row in pats_set.itertuples():
 
@@ -112,6 +115,8 @@ if __name__ == "__main__":
             features_vectors_demo_diag_meas.sort_values(['hadm_id', 'time'], ascending=[True, True], inplace=True)
             treat_df.sort_values(['hadm_id', 'time'], ascending=[True, True], inplace=True)
 
+            features_vectors_demo_diag_meas = build_feature_vectors.noramlize_vectors(features_vectors_demo_diag_meas,meas_itms_vec_num, meas_itms_vec_cat)
+
             training_meas_diag_demo = features_vectors_demo_diag_meas[features_vectors_demo_diag_meas.hadm_id != hadm_id]
             testing_meas_diag_demo = features_vectors_demo_diag_meas[features_vectors_demo_diag_meas.hadm_id == hadm_id]
             training_treat = treat_df[treat_df.hadm_id != hadm_id]
@@ -131,7 +136,7 @@ if __name__ == "__main__":
         else:
             print('No Similar Patient found.')
 
-    print('calculating overall results (precision, recall, F1-score)')
+    print('calculating overall results (precision, recall, F1-score) for evaluation row 1 experiment of using raw encoding variant.')
     cal.calculate_results(conn)
 
     stop(conn, cur)

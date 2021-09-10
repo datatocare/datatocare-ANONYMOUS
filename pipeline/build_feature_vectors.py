@@ -1,13 +1,16 @@
 import pandas as pd
-import sys
 import numpy as np
 import multiprocessing
+from sklearn.preprocessing import LabelEncoder
+from pandas.api.types import is_string_dtype
 import time
-import os
 import pickle
-
-# setting path for importing scripts in external folder
-sys.path.insert(1, '../common')
+import os
+import sys
+path = os.getcwd()
+path = path.split('experiments')[0] + 'common'
+# setting path for importing scripts
+sys.path.insert(1, path)
 import db_handler
 
 
@@ -52,6 +55,31 @@ def get_treat_vector_data(cols):
     tvd_df = pd.DataFrame(treat_vector_data, columns=cols)
     return tvd_df
 
+def noramlize_vectors(features_vectors_demo_diag_meas,items_num, items_cat):
+    if features_vectors_demo_diag_meas['icu_type'].isnull().any():
+            if not features_vectors_demo_diag_meas['icu_type'].isnull().all():
+                features_vectors_demo_diag_meas['icu_type'].fillna(
+                    features_vectors_demo_diag_meas['icu_type'].mode()[0], inplace=True)
+
+    items_num_strs = list(map(lambda x:'meas_' + str(x), items_num.itemid.tolist()))
+    for meas in items_num_strs:
+        if not features_vectors_demo_diag_meas[meas].isnull().all():
+            features_vectors_demo_diag_meas[meas].fillna(
+                features_vectors_demo_diag_meas[meas].median(), inplace=True)
+
+    items_cat_strs = list(map(lambda x:'meas_' + str(x), items_cat.itemid.tolist()))
+    for meas in items_cat_strs:
+        if not features_vectors_demo_diag_meas[meas].isnull().all():
+            features_vectors_demo_diag_meas[meas].fillna(
+                features_vectors_demo_diag_meas[meas].mode()[0], inplace=True)
+
+    label_encoder = LabelEncoder()
+    for col in features_vectors_demo_diag_meas.columns:
+        if is_string_dtype(features_vectors_demo_diag_meas[col]):
+            col_num = label_encoder.fit_transform(features_vectors_demo_diag_meas[col].tolist())
+            features_vectors_demo_diag_meas[col] = list(col_num)
+            
+    return features_vectors_demo_diag_meas
 
 # For a given admission, return ICU types patient is admitted.
 def get_icu_types(conn, hadm_id):
@@ -68,10 +96,6 @@ def enrich_demographic_features(demo_vectors_amd_id, adm_id, demo_data_adm_id):
 
     val_pats = pd.read_csv('valid_admissions_wo_holdout.csv')
     val_pats = val_pats[val_pats.hadm_id == adm_id]
-
-    if len(val_pats) < 1:
-        val_pats = pd.read_csv('experiment_micu_testing.csv')
-        val_pats = val_pats[val_pats.hadm_id == adm_id]
 
     demo_vectors_amd_id['age'] = val_pats['age'].iloc[0]
     demo_vectors_amd_id['ethnicity'] = demo_data_adm_id['ethnicity']

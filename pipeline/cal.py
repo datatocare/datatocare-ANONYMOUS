@@ -1,12 +1,14 @@
 import pandas as pd
-import os
 import copy
 import pickle
 import random
 import math
+import os
 import sys
+path = os.getcwd()
+path = path.split('experiments')[0] + 'common'
 # setting path for importing scripts
-sys.path.insert(1, '../common')
+sys.path.insert(1, path)
 import db_handler
 
 conf_interval = 0.9
@@ -202,7 +204,7 @@ def get_treatment_data(conn, test_pats):
 
 # calculate metrics for predictions of testing patients
 def calculate_results(conn):
-    experiment = 'experiment_micu_testing.csv'
+    experiment = 'experiment_micu_eval.csv'
     pset = pd.read_csv(experiment)
 
     tdf = get_treatment_data(conn, pset.hadm_id.tolist())

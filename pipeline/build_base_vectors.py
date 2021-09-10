@@ -1,12 +1,13 @@
 import pandas as pd
-import sys
-import os
 import copy
 import numpy as np
 from scipy.stats import sem, t
-# setting path for importing scripts in external folder
-sys.path.insert(1, '../common')
-sys.path.insert(3, '../task_3')
+import os
+import sys
+path = os.getcwd()
+path = path.split('experiments')[0] + 'common'
+# setting path for importing scripts
+sys.path.insert(1, path)
 import db_handler
 
 
