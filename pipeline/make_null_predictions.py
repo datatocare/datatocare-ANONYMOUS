@@ -48,7 +48,7 @@ def process_predict(conn, pset):
 	    hadm_id = getattr(row, 'hadm_id')
 	    
 	    td = getattr(row, 'timediff')
-	    ptd = td+2
+	    ptd = td+4
 
 	    val_pats = simset[simset.timespent >= ptd].hadm_id.unique().tolist()
 	    

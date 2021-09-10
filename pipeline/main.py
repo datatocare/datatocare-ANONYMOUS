@@ -13,7 +13,7 @@ import db_handler
 # start pipeline, by intiating connection to database
 # return connection as conn and cursor as cur
 def start():
-    print("Pipeline started for testing row 1 null hyposthesis experiment to predict in 2 hours.")
+    print("Pipeline started for testing row 3 null hyposthesis experiment to predict in 4 hours.")
     conn = db_handler.intialize_database_handler()
     cur = conn.cursor()
     return conn, cur
@@ -23,7 +23,7 @@ def start():
 # return connection and cursor
 def stop(conn, cur):
     db_handler.close_db_connection(conn, cur)
-    print("Pipeline ended for testing row 1 null hyposthesis experiment to predict in 2 hours.")
+    print("Pipeline ended for testing row 3 null hyposthesis experiment to predict in 4 hours.")
 
 
 if __name__ == "__main__":
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     pats_set = pd.read_csv(experiment)
     predictions = make_null_predictions.process_predict(conn, pats_set)
 
-    print('calculating overall prediction results (precision, recall, F1-score) for testing row 1 null hyposthesis experiment to predict in 2 hours.')
+    print('calculating overall prediction results (precision, recall, F1-score) for testing row 3 null hyposthesis experiment to predict in 4 hours.')
     cal.calculate_results(conn, pats_set, predictions)
 
     stop(conn, cur)

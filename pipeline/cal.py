@@ -194,7 +194,7 @@ def calculate_results(conn, pset, predictions):
         hadm_id = getattr(row, 'hadm_id')
         time = getattr(row, 'evaltime')
         
-        time_horizon = time + pd.Timedelta(2, unit='h')
+        time_horizon = time + pd.Timedelta(4, unit='h')
 
         td = getattr(row, 'timediff')
         
