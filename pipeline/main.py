@@ -19,10 +19,11 @@ sys.path.insert(1, path)
 import db_handler
 
 
+
 # start pipeline, by intiating connection to database
 # return connection as conn and cursor as cur
 def start():
-    print("Pipeline started for evaluation row 8 experiment of using a time horizon of 24 hours for treatment prediction.")
+    print("Pipeline started for testing row 2 experiment of using DataToCare to predict in 2 hours.")
     conn = db_handler.intialize_database_handler()
     cur = conn.cursor()
     return conn, cur
@@ -32,7 +33,7 @@ def start():
 # return connection and cursor
 def stop(conn, cur):
     db_handler.close_db_connection(conn, cur)
-    print("Pipeline ended for evaluation row 8 experiment of using a time horizon of 24 hours for treatment prediction.")
+    print("Pipeline ended for testing row 2 experiment of using DataToCare to predict in 2 hours.")
 
 
 if __name__ == "__main__":
@@ -42,13 +43,12 @@ if __name__ == "__main__":
     #compute abnormal ranges
     compute.compute(conn)
 
-    # read patients and run the pipeline for each 300 patients
-    experiment = 'experiment_micu_eval.csv'
+    # read testing patients and run the pipeline for each 500 patients
+    experiment = 'experiment_micu_testing.csv'
 
     pats_set = pd.read_csv(experiment)
+    print('Started pipeline to process each testing Patient')
 
-    print('Started pipeline to process each Patient')
-    
     for row in pats_set.itertuples():
 
         hadm_id = getattr(row, 'hadm_id')
@@ -134,7 +134,7 @@ if __name__ == "__main__":
         else:
             print('No Similar Patient found.')
 
-    print('calculating overall results (precision, recall, F1-score) for evaluation row 8 experiment of using a time horizon of 24 hours for treatment prediction.')
+    print('calculating overall results (precision, recall, F1-score) for testing row 2 experiment of using DataToCare to predict in 2 hours.')
     cal.calculate_results(conn)
 
     stop(conn, cur)

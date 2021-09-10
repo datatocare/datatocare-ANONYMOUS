@@ -35,8 +35,8 @@ def read_similar_patients(hadm_id):
     similar_patients_df = similar_patients_df[similar_patients_df['hadm_id'].isin(valid_hadmids)]
 
     similar_patients_df_tmp = similar_patients_df[similar_patients_df.score >= 70]
-    if len(similar_patients_df_tmp) < 50:
-        similar_patients_df_tmp = similar_patients_df.head(50)
+    if len(similar_patients_df_tmp) < 100:
+        similar_patients_df_tmp = similar_patients_df.head(100)
     else:
         similar_patients_df_tmp = similar_patients_df_tmp.head(200)
 

@@ -11,6 +11,7 @@ path = path.split('experiments')[0] + 'common'
 sys.path.insert(1, path)
 import db_handler
 
+
 conf_interval = 0.9
 # maps proportion of values above mean
 # to number of standard deviations above mean
@@ -118,7 +119,7 @@ def compile_results(hadm_id,time,td, tdf_tmp):
 
     if os.path.isdir(directory):
         for filename in os.listdir(directory):
-            if 'rf_24' in filename:
+            if 'rf_2' in filename:
                 file_path = os.path.join(directory, filename)
                 
                 tdf = pd.read_pickle(file_path)
@@ -204,7 +205,7 @@ def get_treatment_data(conn, test_pats):
 
 # calculate metrics for predictions of testing patients
 def calculate_results(conn):
-    experiment = 'experiment_micu_eval.csv'
+    experiment = 'experiment_micu_testing.csv'
     pset = pd.read_csv(experiment)
 
     tdf = get_treatment_data(conn, pset.hadm_id.tolist())
@@ -218,7 +219,7 @@ def calculate_results(conn):
         hadm_id = getattr(row, 'hadm_id')
         time = getattr(row, 'evaltime')
         
-        time_horizon = time + pd.Timedelta(24, unit='h')
+        time_horizon = time + pd.Timedelta(2, unit='h')
 
         td = getattr(row, 'timediff')
         
