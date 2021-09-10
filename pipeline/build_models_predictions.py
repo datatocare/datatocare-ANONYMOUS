@@ -29,7 +29,7 @@ def cal_potential_results(hadm_id):
 
 	for filename in os.listdir(directory):
 
-		if 'rf_2' in filename:
+		if 'rf_4' in filename:
 			file_path = os.path.join(directory, filename)
 
 			tdf = pd.read_pickle(file_path)
@@ -49,10 +49,10 @@ def cal_potential_results(hadm_id):
 		rdf_tmp_p = rdf_tmp[rdf_tmp.predict == 1]
 		tp = rdf_tmp_p.treatment.unique()
 
-		print('************Potential Actual Treatments in next 2 hours***************')
+		print('************Potential Actual Treatments in next 4 hours***************')
 		print(ta)
 		print('********************************************')
-		print('************Predicted Treatments in next 2 hours************')
+		print('************Predicted Treatments in next 4 hours************')
 		print(tp)
 		print('********************************************')
 
@@ -80,10 +80,10 @@ def build_model(X_train,Y_train,X_test,Y_test,times,states,treat,hadm_id,version
 def build_attributes_model_predict(ddmtr_df,ttr_df,ddmtte_df,cols_mddt,treat,times,states,hadm_id):
 
 	print('Building attributes for treatment : ' + str(treat))
-	X_train,Y_train_2,X_test,Y_test_2 = build_attributes_label(ddmtr_df,ttr_df,ddmtte_df,cols_mddt,treat)
+	X_train,Y_train_4,X_test,Y_test_4 = build_attributes_label(ddmtr_df,ttr_df,ddmtte_df,cols_mddt,treat)
 
 	print('Building model for treatment : ' + str(treat))
-	build_model(X_train,Y_train_2,X_test,Y_test_2,times,states,treat,hadm_id,2)
+	build_model(X_train,Y_train_4,X_test,Y_test_4,times,states,treat,hadm_id,4)
 
 
 #Seperate attributes and labels from training and testing data for each potential treatment
