@@ -1,6 +1,5 @@
 # DataToCare
 Code Repository of DatatoCare Treatment Prediction Pipeline.  
-Please make sure to extract the code in the zip file to the directory/folder "DataToCare", using any other name will break the code as most of the import paths depends on it.
 
 To run DatatoCare Code, see the instructions below.
 

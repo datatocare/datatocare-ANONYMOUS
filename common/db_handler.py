@@ -1,6 +1,8 @@
 import psycopg2
 import pandas as pd
-import sys
+import os
+path = os.getcwd()
+path = path.split('experiments')[0] + 'common'
 
 
 # Terminate the program as fatal query error occur
@@ -103,15 +105,15 @@ def make_selection_query(connection, query):
 def close_db_connection(connection, cursor):
     if (cursor):
         cursor.close()
-        print("Cursor is closed \n")
+        # print("Cursor is closed \n")
     if (connection):
         cursor.close()
-        print("PostgreSQL connection is closed \n")
+        # print("PostgreSQL connection is closed \n")
 
 
 # Read database connection parameters from file and return them in a tuple.
 def read_db_parameters():
-    with open('../common/databse_connection_parameters.txt') as fp:
+    with open(path + '/databse_connection_parameters.txt') as fp:
         parameters = fp.read().splitlines()
         hostname = parameters[0].split('= ')[1]
         port = int(parameters[1].split('= ')[1])

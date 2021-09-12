@@ -15,7 +15,7 @@ def check_dataset_optimized(cur):
 
 
 # Creating measurement tables with data exclusive to mv patients
-# and with only columns required for task 1
+# and with only columns required by setup and pipeline
 def optimize(cur):
     tables_for_optimization = ['chartevents', 'labevents']
     for table in tables_for_optimization:

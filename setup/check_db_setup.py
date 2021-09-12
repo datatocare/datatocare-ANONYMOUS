@@ -3,7 +3,7 @@ import sys
 sys.path.insert(1, '../common')
 import db_handler
 
-# Check whether all the essential tables for task 1 exist in the database
+# Check whether all the essential tables for setup  exist in the database
 def check_tables_exist(cur):
     tables = [
         'chartevents',
@@ -22,7 +22,7 @@ def check_tables_exist(cur):
     return True
 
 
-# Check whether all the essential tables for task 1 loaded
+# Check whether all the essential tables for setup loaded
 # correctly in the database
 def check_tables_loaded(cur):
     table_rows_count_expected = {
